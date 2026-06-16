@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Secrets - KHÔNG bao giờ commit!
+k8s-manifests/database/secret.yaml
+*.env
+.env.*
+!.env.example
+
+# Backups
+backups/
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+.dockerignore

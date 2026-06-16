@@ -1,0 +1,38 @@
+global:
+  imageRegistry: ghcr.io
+  imagePullSecrets: [ghcr-secret]
+
+frontend:
+  replicaCount: 2
+  image:
+    repository: YOUR_GITHUB_USER/portfolio-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    cpuUtilization: 70
+
+backend:
+  replicaCount: 2
+  image:
+    repository: YOUR_GITHUB_USER/portfolio-backend
+    tag: latest
+  env:
+    NODE_ENV: production
+    PORT: '8080'
+
+database:
+  enabled: true
+  storage: 10Gi
+  storageClass: local-path
+
+ingress:
+  enabled: true
+  host: portfolio.yourdomain.com
+  tls: true
+  clusterIssuer: letsencrypt-prod
