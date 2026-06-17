@@ -1,4 +1,4 @@
-FROM nginx:1.25-alpine
+FROM nginx:1.27-alpine
 
 # Xóa sạch cấu hình mặc định của Nginx để tránh xung đột
 RUN rm -rf /etc/nginx/conf.d/*
