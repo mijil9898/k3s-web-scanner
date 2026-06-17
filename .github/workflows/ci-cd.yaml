@@ -19,18 +19,18 @@ jobs:
         with:
           fetch-depth: 0
           
-      - name: Gitleaks (Scan leaked secrets/tokens)
+      - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Hadolint (Lint Frontend Dockerfile)
+      - name: Hadolint Frontend
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: apps/frontend/Dockerfile
           failure-threshold: warning
 
-      - name: Hadolint (Lint Backend Dockerfile)
+      - name: Hadolint Backend
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: apps/backend/Dockerfile
@@ -81,6 +81,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
 
+<<<<<<< HEAD
       - name: Generate Markdown Security Report (Safe Mode)
         run: |
           REPORT_FILE="security-report-${{ matrix.app }}.md"
@@ -111,11 +112,29 @@ jobs:
           echo "### ${{ matrix.app }} Security Summary" >> $GITHUB_STEP_SUMMARY
           echo "- 🔴 **CRITICAL:** $CRITICAL_COUNT" >> $GITHUB_STEP_SUMMARY
           echo "- 🟠 **HIGH:** $HIGH_COUNT" >> $GITHUB_STEP_SUMMARY
+=======
+      - name: Generate Markdown Security Report
+        run: |
+          REPORT_FILE="security-report-${{ matrix.app }}.md"
+          JSON_FILE="trivy-${{ matrix.app }}.json"
+          echo "# Security Scan Report: ${{ matrix.app }}" > $REPORT_FILE
+          if [ -f "$JSON_FILE" ] && jq empty "$JSON_FILE" >/dev/null 2>&1; then
+            echo "| Severity | CVE ID | Package | Installed | Fixed |" >> $REPORT_FILE
+            echo "|---|---|---|---|---|" >> $REPORT_FILE
+            jq -r '.Results[]? | .Vulnerabilities[]? | "| \(.Severity) | \(.VulnerabilityID) | \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion // "N/A") |"' "$JSON_FILE" >> $REPORT_FILE || true
+          else
+            echo "_No vulnerabilities found or scan failed._" >> $REPORT_FILE
+          fi
+>>>>>>> d63b033 (fix: restore valid yaml syntax and upgrade nginx to 1.27)
 
       - name: Push image to GHCR
         run: docker push ${{ env.REGISTRY }}/${{ github.repository }}/portfolio-${{ matrix.app }}:${{ github.ref_name }}
 
+<<<<<<< HEAD
       - name: Upload Artifacts (JSON & Markdown)
+=======
+      - name: Upload Artifacts
+>>>>>>> d63b033 (fix: restore valid yaml syntax and upgrade nginx to 1.27)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -144,6 +163,7 @@ jobs:
           RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           REF_NAME: ${{ github.ref_name }}
         run: |
+<<<<<<< HEAD
           if [ -z "$WEBHOOK_URL" ]; then
             echo "⚠️ DISCORD_WEBHOOK secret is not set."
             exit 0
@@ -189,4 +209,17 @@ jobs:
           }
           EOF
 
+=======
+          if [ -z "$WEBHOOK_URL" ]; then exit 0; fi
+          cat <<EOF > payload.json
+          {
+            "embeds": [{
+              "title": "Release ${REF_NAME} Pipeline Finished",
+              "description": "Check GitHub Actions Artifacts for detailed CVE Markdown reports.",
+              "color": 3066993,
+              "url": "${RUN_URL}"
+            }]
+          }
+          EOF
+>>>>>>> d63b033 (fix: restore valid yaml syntax and upgrade nginx to 1.27)
           curl -H "Content-Type: application/json" -X POST -d @payload.json $WEBHOOK_URL
