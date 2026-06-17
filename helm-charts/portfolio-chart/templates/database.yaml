@@ -1,3 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-initdb
+  namespace: portfolio
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS projects (
+      id          SERIAL PRIMARY KEY,
+      title       VARCHAR(255) NOT NULL,
+      description TEXT,
+      tech_stack  TEXT[],
+      github_url  VARCHAR(500),
+      demo_url    VARCHAR(500),
+      created_at  TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS contacts (
+      id         SERIAL PRIMARY KEY,
+      name       VARCHAR(100) NOT NULL,
+      email      VARCHAR(255) NOT NULL,
+      message    TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    INSERT INTO projects (title, description, tech_stack)
+    VALUES ('k3s-portfolio-platform', 'Full-stack K8s deployment', ARRAY['K3s','Docker','Helm','GitHub Actions'])
+    ON CONFLICT DO NOTHING;
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -20,25 +47,34 @@ spec:
         ports:
         - containerPort: 5432
         env:
+        - name: POSTGRES_USER
+          value: "portfolio"
         - name: POSTGRES_PASSWORD
           valueFrom:
             secretKeyRef:
               name: postgres-secret
               key: password
         - name: POSTGRES_DB
-          value: portfolio
+          value: "portfolio"
         volumeMounts:
         - name: postgres-data
           mountPath: /var/lib/postgresql/data
+          subPath: pgdata # Tránh lỗi phân quyền thư mục data của Postgres
+        - name: initdb
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: initdb
+        configMap:
+          name: postgres-initdb
   volumeClaimTemplates:
   - metadata:
       name: postgres-data
     spec:
       accessModes: ['ReadWriteOnce']
-      storageClassName: {{ .Values.database.storageClass }}
+      storageClassName: local-path
       resources:
         requests:
-          storage: {{ .Values.database.storage }}
+          storage: 10Gi
 ---
 apiVersion: v1
 kind: Service

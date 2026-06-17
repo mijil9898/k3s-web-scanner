@@ -1,0 +1,19 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: portfolio-ingress
+  namespace: portfolio
+spec:
+  entryPoints:
+    - web
+  routes:
+  - match: Host(`portfolio.local`) || PathPrefix(`/`)
+    kind: Rule
+    services:
+    - name: frontend-service
+      port: 80
+  - match: Host(`portfolio.local`) && PathPrefix(`/api`)
+    kind: Rule
+    services:
+    - name: backend-service
+      port: 8080
