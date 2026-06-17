@@ -1,3 +1,41 @@
+name: Production CI/CD Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  REGISTRY: ghcr.io
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
+
+jobs:
+  security-lint:
+    name: Security & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Gitleaks (Scan leaked secrets/tokens)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Hadolint (Lint Frontend Dockerfile)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: apps/frontend/Dockerfile
+          failure-threshold: warning
+
+      - name: Hadolint (Lint Backend Dockerfile)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: apps/backend/Dockerfile
+          failure-threshold: warning
+
   build-scan-push:
     name: Build & CVE Scan
     needs: security-lint
@@ -22,7 +60,7 @@
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image (Load to local for Trivy scan & Use GHA Cache)
+      - name: Build image
         uses: docker/build-push-action@v5
         with:
           context: ./apps/${{ matrix.app }}
@@ -33,13 +71,104 @@
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: true
         with:
           image-ref: '${{ env.REGISTRY }}/${{ github.repository }}/portfolio-${{ matrix.app }}:${{ github.ref_name }}'
-          format: 'table'
-          exit-code: '1'
+          format: 'json'
+          output: trivy-${{ matrix.app }}.json
           ignore-unfixed: true
           vuln-type: 'os,library'
-          severity: 'CRITICAL' # Chỉ chặn CRITICAL, bỏ qua HIGH để tránh lỗi base image
+          severity: 'CRITICAL,HIGH'
+
+      - name: Evaluate Trivy Results & Fail on CRITICAL
+        id: eval
+        run: |
+          CRITICAL_COUNT=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-${{ matrix.app }}.json)
+          HIGH_COUNT=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-${{ matrix.app }}.json)
+          
+          echo "### Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "**${{ matrix.app }}**: 🔴 ${CRITICAL_COUNT} CRITICAL | 🟠 ${HIGH_COUNT} HIGH" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$CRITICAL_COUNT" -gt 0 ]; then
+            echo "❌ CRITICAL vulnerabilities found. Failing job."
+            exit 1
+          fi
 
       - name: Push image to GHCR
+        if: steps.eval.outcome == 'success'
         run: docker push ${{ env.REGISTRY }}/${{ github.repository }}/portfolio-${{ matrix.app }}:${{ github.ref_name }}
+
+      - name: Upload Trivy JSON Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-summary-${{ matrix.app }}
+          path: trivy-${{ matrix.app }}.json
+
+  notify:
+    name: Discord Notification
+    needs: [security-lint, build-scan-push]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Trivy Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: trivy-artifacts
+          pattern: trivy-summary-*
+          merge-multiple: true
+
+      - name: Parse and Send Discord Webhook
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+          STATUS: ${{ needs.build-scan-push.result }}
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "⚠️ DISCORD_WEBHOOK secret is not set. Skipping notification."
+            exit 0
+          fi
+
+          shopt -s nullglob
+          CRITICAL_TOTAL=0
+          HIGH_TOTAL=0
+          DETAILS=""
+          
+          for file in trivy-artifacts/*.json; do
+            APP_NAME=$(basename $file .json | sed 's/trivy-//')
+            C=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' $file)
+            H=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity == "HIGH")] | length' $file)
+            CRITICAL_TOTAL=$((CRITICAL_TOTAL + C))
+            HIGH_TOTAL=$((HIGH_TOTAL + H))
+            DETAILS="${DETAILS}\n**${APP_NAME}**: 🔴 ${C} CRITICAL | 🟠 ${H} HIGH"
+          done
+
+          if [ -z "$DETAILS" ]; then
+            DETAILS="\n_No security scan data available._"
+          fi
+
+          if [ "$STATUS" == "success" ]; then
+            COLOR=3066993
+            TITLE="✅ Release ${REF_NAME} Deployed Successfully"
+          else
+            COLOR=15158332
+            TITLE="❌ Release ${REF_NAME} Pipeline Failed"
+          fi
+
+          cat <<EOF > payload.json
+          {
+            "embeds": [
+              {
+                "title": "${TITLE}",
+                "description": "**Repository:** ${{ github.repository }}\n**Commit:** ${{ github.sha }}\n\n**Security Scan Summary:**${DETAILS}\n\n[View Pipeline Run](${RUN_URL})",
+                "color": ${COLOR},
+                "footer": {
+                  "text": "K3s Portfolio Platform CI/CD"
+                }
+              }
+            ]
+          }
+          EOF
+
+          curl -H "Content-Type: application/json" -X POST -d @payload.json $WEBHOOK_URL
