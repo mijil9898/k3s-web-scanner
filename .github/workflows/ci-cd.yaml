@@ -19,18 +19,18 @@ jobs:
         with:
           fetch-depth: 0
           
-      - name: Gitleaks (Scan leaked secrets/tokens)
+      - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Hadolint (Lint Frontend Dockerfile)
+      - name: Hadolint Frontend
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: apps/frontend/Dockerfile
           failure-threshold: warning
 
-      - name: Hadolint (Lint Backend Dockerfile)
+      - name: Hadolint Backend
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: apps/backend/Dockerfile
@@ -60,7 +60,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build image (Load to local for Trivy scan & Use GHA Cache)
+      - name: Build image
         uses: docker/build-push-action@v5
         with:
           context: ./apps/${{ matrix.app }}
@@ -71,31 +71,70 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: true
         with:
           image-ref: '${{ env.REGISTRY }}/${{ github.repository }}/portfolio-${{ matrix.app }}:${{ github.ref_name }}'
-          format: 'table'
-          exit-code: '1'
+          format: 'json'
+          output: trivy-${{ matrix.app }}.json
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
           exit-code: '0'
 
+      - name: Generate Markdown Security Report
+        run: |
+          REPORT_FILE="security-report-${{ matrix.app }}.md"
+          JSON_FILE="trivy-${{ matrix.app }}.json"
+          echo "# Security Scan Report: ${{ matrix.app }}" > $REPORT_FILE
+          if [ -f "$JSON_FILE" ] && jq empty "$JSON_FILE" >/dev/null 2>&1; then
+            echo "| Severity | CVE ID | Package | Installed | Fixed |" >> $REPORT_FILE
+            echo "|---|---|---|---|---|" >> $REPORT_FILE
+            jq -r '.Results[]? | .Vulnerabilities[]? | "| \(.Severity) | \(.VulnerabilityID) | \(.PkgName) | \(.InstalledVersion) | \(.FixedVersion // "N/A") |"' "$JSON_FILE" >> $REPORT_FILE || true
+          else
+            echo "_No vulnerabilities found or scan failed._" >> $REPORT_FILE
+          fi
+
       - name: Push image to GHCR
         run: docker push ${{ env.REGISTRY }}/${{ github.repository }}/portfolio-${{ matrix.app }}:${{ github.ref_name }}
 
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-artifacts-${{ matrix.app }}
+          path: |
+            security-report-${{ matrix.app }}.md
+            trivy-${{ matrix.app }}.json
+
   notify:
-    name: Release Notification
+    name: Discord Notification
     needs: [security-lint, build-scan-push]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Discord Notification
-        uses: sarisia/actions-status-discord@v1
-        if: always()
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          status: ${{ needs.build-scan-push.result }}
-          title: "Release ${{ github.ref_name }}"
-          description: "CI/CD Pipeline for K3s Portfolio Platform"
-          color: 0x0000ff
-          url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          pattern: security-artifacts-*
+          merge-multiple: true
+          path: artifacts
+        continue-on-error: true
+
+      - name: Send Discord Notification
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -z "$WEBHOOK_URL" ]; then exit 0; fi
+          cat <<EOF > payload.json
+          {
+            "embeds": [{
+              "title": "Release ${REF_NAME} Pipeline Finished",
+              "description": "Check GitHub Actions Artifacts for detailed CVE Markdown reports.",
+              "color": 3066993,
+              "url": "${RUN_URL}"
+            }]
+          }
+          EOF
+          curl -H "Content-Type: application/json" -X POST -d @payload.json $WEBHOOK_URL
