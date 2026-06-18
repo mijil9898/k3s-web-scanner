@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Deploy-all script: build malware image, import to k3d, create secret, helm deploy portfolio chart, and show Cloudflare URL
-
+# Wrapper deploy-all moved into scripts/
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# assume malware-analyzer is inside this chart's apps/ directory
-REPO_ROOT="$SCRIPT_DIR"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MALWARE_DIR="$REPO_ROOT/apps/malware-analyzer"
 IMAGE_NAME="malware-analyzer:latest"
 K3D_CLUSTER=${K3D_CLUSTER:-portfolio-dev}
