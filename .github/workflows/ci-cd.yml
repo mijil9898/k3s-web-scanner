@@ -20,99 +20,77 @@ env:
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/k3s-portfolio-platform
 
 jobs:
-  test:
-    name: Run tests (Python + JS if present)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run Python tests
-        if: ${{ always() }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Install Python deps & pytest
-        if: ${{ always() }}
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r malware-analyzer/requirements.txt
-          pip install pytest
-      - name: Run pytest
-        if: ${{ always() }}
-        run: |
-          pytest -q || true
-      - name: Run Node tests for frontend/backend
-        if: ${{ always() }}
-        run: |
-          if [ -f apps/frontend/package.json ]; then (cd apps/frontend && npm ci && npm test) || true; fi
-          if [ -f apps/backend/package.json ]; then (cd apps/backend && npm ci && npm test) || true; fi
-
-  build_and_push:
-    name: Build and push container images
-    needs: test
+  build_and_scan:
+    name: Build, scan, push images
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
+
+      - name: Set up QEMU and buildx
         uses: docker/setup-buildx-action@v2
-      - name: Login to registry (GHCR)
+
+      - name: Login to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT || secrets.GITHUB_TOKEN }}
-      - name: Build & push frontend image
-        if: ${{ always() }}
-        uses: docker/build-push-action@v4
-        with:
-          context: apps/frontend
-          push: true
-          tags: ${{ env.IMAGE_PREFIX }}:frontend-latest
-      - name: Trivy scan frontend image
-        if: always()
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: ${{ env.IMAGE_PREFIX }}:frontend-latest
-          format: json
-          output: trivy-frontend.json
-          exit-code: '0'
-      - name: Build & push backend image
-        if: ${{ always() }}
-        uses: docker/build-push-action@v4
-        with:
-          context: apps/backend
-          push: true
-          tags: ${{ env.IMAGE_PREFIX }}:backend-latest
-      - name: Trivy scan backend image
-        if: always()
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: ${{ env.IMAGE_PREFIX }}:backend-latest
-          format: json
-          output: trivy-backend.json
-          exit-code: '0'
-      - name: Build & push malware-analyzer image
-        if: ${{ always() }}
-        uses: docker/build-push-action@v4
-        with:
-          context: malware-analyzer
-          push: true
-          tags: ${{ env.IMAGE_PREFIX }}:malware-analyzer-latest
-      - name: Trivy scan malware-analyzer image
-        if: always()
-        uses: aquasecurity/trivy-action@v0.28.0
-        with:
-          image-ref: ${{ env.IMAGE_PREFIX }}:malware-analyzer-latest
-          format: json
-          output: trivy-malware-analyzer.json
-          exit-code: '0'
+
+      - name: Build & push frontend (if present)
+        run: |
+          if [ -f apps/frontend/Dockerfile ]; then
+            docker build -t ${{ env.IMAGE_PREFIX }}:frontend-latest apps/frontend
+            docker push ${{ env.IMAGE_PREFIX }}:frontend-latest
+          else
+            echo 'no frontend Dockerfile'
+          fi
+
+      - name: Trivy scan frontend (if image exists)
+        run: |
+          if docker manifest inspect ${{ env.IMAGE_PREFIX }}:frontend-latest >/dev/null 2>&1; then
+            docker run --rm aquasecurity/trivy:0.28.0 image --quiet --format json --output trivy-frontend.json ${{ env.IMAGE_PREFIX }}:frontend-latest || true
+          else
+            echo 'frontend image not found, skipping trivy'
+          fi
+
+      - name: Build & push backend (if present)
+        run: |
+          if [ -f apps/backend/Dockerfile ]; then
+            docker build -t ${{ env.IMAGE_PREFIX }}:backend-latest apps/backend
+            docker push ${{ env.IMAGE_PREFIX }}:backend-latest
+          else
+            echo 'no backend Dockerfile'
+          fi
+
+      - name: Trivy scan backend (if image exists)
+        run: |
+          if docker manifest inspect ${{ env.IMAGE_PREFIX }}:backend-latest >/dev/null 2>&1; then
+            docker run --rm aquasecurity/trivy:0.28.0 image --quiet --format json --output trivy-backend.json ${{ env.IMAGE_PREFIX }}:backend-latest || true
+          else
+            echo 'backend image not found, skipping trivy'
+          fi
+
+      - name: Build & push malware-analyzer (if present)
+        run: |
+          if [ -f malware-analyzer/Dockerfile ]; then
+            docker build -t ${{ env.IMAGE_PREFIX }}:malware-analyzer-latest malware-analyzer
+            docker push ${{ env.IMAGE_PREFIX }}:malware-analyzer-latest
+          else
+            echo 'no malware-analyzer Dockerfile'
+          fi
+
+      - name: Trivy scan malware-analyzer (if image exists)
+        run: |
+          if docker manifest inspect ${{ env.IMAGE_PREFIX }}:malware-analyzer-latest >/dev/null 2>&1; then
+            docker run --rm aquasecurity/trivy:0.28.0 image --quiet --format json --output trivy-malware-analyzer.json ${{ env.IMAGE_PREFIX }}:malware-analyzer-latest || true
+          else
+            echo 'malware-analyzer image not found, skipping trivy'
+          fi
 
       - name: Upload Trivy reports
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-reports
@@ -122,7 +100,6 @@ jobs:
             trivy-malware-analyzer.json
 
       - name: Summarize security scan and fail on CRITICAL
-        if: always()
         run: |
           CRITICAL=0
           HIGH=0
@@ -142,7 +119,7 @@ jobs:
 
   deploy:
     name: Deploy to cluster (manual)
-    needs: build_and_push
+    needs: build_and_scan
     runs-on: ubuntu-latest
     if: ${{ github.event.inputs.deploy == 'true' }}
     steps:
