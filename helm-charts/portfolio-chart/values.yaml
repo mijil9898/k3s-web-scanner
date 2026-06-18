@@ -36,3 +36,33 @@ ingress:
   host: portfolio.yourdomain.com
   tls: true
   clusterIssuer: letsencrypt-prod
+
+malwareAnalyzer:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: malware-analyzer
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 5000
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1536Mi"
+  pvc:
+    enabled: true
+    storage: 2Gi
+    storageClass: local-path
+  envFromSecret: malware-secrets
+
+cloudflared:
+  enabled: true
+  image:
+    repository: cloudflare/cloudflared
+    tag: latest
+  # Quick Tunnel mode using --url to point to in-cluster service
+  quickTunnel: true
