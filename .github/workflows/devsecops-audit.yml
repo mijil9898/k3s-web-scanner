@@ -1,0 +1,262 @@
+name: DevSecOps Audit & Visibility
+
+# Triggers: push and PRs to main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Principle of Least Privilege for workflow token
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/k3s-portfolio-platform/malware-analyzer
+  PYTHONPATH: ./apps/malware-analyzer
+
+concurrency:
+  group: devsecops-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit & Visibility (all scanners run, do not block build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install common tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit==1.7.4      # pinned Bandit for SAST
+          pip install sarif-om==1.0.4     # helper if needed for SARIF
+          sudo apt-get update -y
+          sudo apt-get install -y jq docker.io ca-certificates curl
+
+      # ----------------------
+      # SAST: Bandit (Python)
+      # - Runs bandit and emits both JSON and SARIF outputs
+      # - Audit mode: continue-on-error true so findings don't block the pipeline
+      # ----------------------
+      - name: Run Bandit (SAST) -> JSON & SARIF
+        id: bandit
+        continue-on-error: true
+        run: |
+          cd $PYTHONPATH || true
+          bandit -r . -f json -o ../../artifacts/bandit.json || true
+          # Many Bandit versions support SARIF via '-f sarif' or a converter; attempt SARIF output
+          bandit -r . -f sarif -o ../../artifacts/bandit.sarif || true
+
+      - name: Upload Bandit raw JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-json
+          path: artifacts/bandit.json
+
+      - name: Upload Bandit SARIF (for Security Tab)
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: artifacts/bandit.sarif
+
+      # ----------------------
+      # Secret Scanning: gitleaks
+      # - Run gitleaks locally and emit JSON + SARIF where supported
+      # - Audit mode: continue-on-error true
+      # ----------------------
+      - name: Run Gitleaks (secret scan) -> JSON & SARIF
+        id: gitleaks
+        continue-on-error: true
+        run: |
+          # install gitleaks binary (pinned release)
+          GL_VER=8.18.1
+          curl -sL https://github.com/zricethezav/gitleaks/releases/download/v${GL_VER}/gitleaks_${GL_VER}_linux_x64.tar.gz | tar xz -C /tmp
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          mkdir -p artifacts
+          # run gitleaks - JSON output
+          gitleaks detect --source . --report-format json --report-path artifacts/gitleaks.json || true
+          # attempt SARIF conversion if available (gitleaks supports sarif in newer versions)
+          gitleaks detect --source . --report-format sarif --report-path artifacts/gitleaks.sarif || true
+
+      - name: Upload Gitleaks raw JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-json
+          path: artifacts/gitleaks.json
+
+      - name: Upload Gitleaks SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: artifacts/gitleaks.sarif
+
+      # ----------------------
+      # SCA: Trivy filesystem scan (detects and scans Python deps e.g. requirements.txt)
+      # - Scans the repo and emits JSON & SARIF
+      # - Audit mode: continue-on-error true
+      # ----------------------
+      - name: Trivy - SCA (filesystem) -> JSON & SARIF
+        id: trivy-fs
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          # Use official Trivy container to avoid installing on runner
+          TRIVY_IMAGE=aquasecurity/trivy:0.28.0
+          # Scan filesystem (Trivy will detect requirements.txt and scan dependencies)
+          docker run --rm -v $PWD:/src -w /src ${TRIVY_IMAGE} fs --format json --output artifacts/trivy-fs.json . || true
+          docker run --rm -v $PWD:/src -w /src ${TRIVY_IMAGE} fs --format sarif --output artifacts/trivy-fs.sarif . || true
+
+      - name: Upload Trivy FS raw JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-fs-json
+          path: artifacts/trivy-fs.json
+
+      - name: Upload Trivy FS SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: artifacts/trivy-fs.sarif
+
+      # ----------------------
+      # Container: build image and scan with Trivy image scanner
+      # - Build the Docker image locally
+      # - Scan image with Trivy and produce JSON & SARIF
+      # - Audit mode: continue-on-error true
+      # ----------------------
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        id: build-image
+        run: |
+          mkdir -p artifacts
+          docker build -t $IMAGE_NAME:${{ github.sha }} ./apps/malware-analyzer || true
+          echo "IMAGE=$IMAGE_NAME:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Trivy - Image scan -> JSON & SARIF
+        id: trivy-image
+        continue-on-error: true
+        run: |
+          TRIVY_IMAGE=aquasecurity/trivy:0.28.0
+          IMAGE=$IMAGE_NAME:${{ github.sha }}
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/src ${TRIVY_IMAGE} image --format json --output artifacts/trivy-image.json $IMAGE || true
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/src ${TRIVY_IMAGE} image --format sarif --output artifacts/trivy-image.sarif $IMAGE || true
+
+      - name: Upload Trivy image JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-json
+          path: artifacts/trivy-image.json
+
+      - name: Upload Trivy image SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: artifacts/trivy-image.sarif
+
+      # ----------------------
+      # SBOM: syft (generate SPDX SBOM for image)
+      # - produce SPDX file and upload as artifact
+      # ----------------------
+      - name: Generate SBOM with Syft (SPDX)
+        id: syft
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts
+          # Use anchored syft container (pinned)
+          SYFT_IMAGE=anchore/syft:0.84.0
+          IMAGE=$IMAGE_NAME:${{ github.sha }}
+          docker run --rm -v $PWD:/src ${SYFT_IMAGE} package $IMAGE -o spdx-json > artifacts/syft-spdx.json || true
+
+      - name: Upload SBOM (SPDX JSON)
+        uses: actions/upload-artifact@v4
+        with:
+          name: syft-spdx
+          path: artifacts/syft-spdx.json
+
+      # ----------------------
+      # Upload any remaining SARIF files to Security Tab (safe to run even if files missing)
+      # ----------------------
+      - name: Upload all SARIF files (best-effort)
+        if: always()
+        run: |
+          set -e
+          for f in artifacts/*.sarif; do
+            if [ -f "$f" ]; then
+              echo "Uploading $f"
+              gh api --method POST /repos/${{ github.repository }}/code-scanning/sarifs \
+                -F "sarif=@$f" || true
+            fi
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ----------------------
+      # Aggregate findings across the produced raw JSON reports and render a job summary
+      # - We parse Trivy JSONs and Bandit JSON to count severities.
+      # - Audit mode: this step should not fail the job; it only summarizes.
+      # ----------------------
+      - name: Aggregate findings and write $GITHUB_STEP_SUMMARY
+        id: summary
+        continue-on-error: true
+        run: |
+          CRITICAL=0; HIGH=0; MEDIUM=0; LOW=0
+          # Helper: count Trivy-style vulnerabilities
+          count_trivy() {
+            local file="$1"
+            if [ -f "$file" ]; then
+              c=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' "$file" 2>/dev/null || echo 0)
+              h=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity=="HIGH")] | length' "$file" 2>/dev/null || echo 0)
+              m=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length' "$file" 2>/dev/null || echo 0)
+              l=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity=="LOW")] | length' "$file" 2>/dev/null || echo 0)
+              CRITICAL=$((CRITICAL + c)); HIGH=$((HIGH + h)); MEDIUM=$((MEDIUM + m)); LOW=$((LOW + l))
+            fi
+          }
+
+          # Count Bandit findings (Bandit JSON has issues[] with issue_severity)
+          if [ -f artifacts/bandit.json ]; then
+            bc=$(jq '[.results[]? | select(.issue_severity=="HIGH")] | length' artifacts/bandit.json 2>/dev/null || echo 0)
+            bm=$(jq '[.results[]? | select(.issue_severity=="MEDIUM")] | length' artifacts/bandit.json 2>/dev/null || echo 0)
+            bl=$(jq '[.results[]? | select(.issue_severity=="LOW")] | length' artifacts/bandit.json 2>/dev/null || echo 0)
+            # Bandit doesn't have CRITICAL normally; treat HIGH as HIGH
+            HIGH=$((HIGH + bc)); MEDIUM=$((MEDIUM + bm)); LOW=$((LOW + bl))
+          fi
+
+          # Count Trivy files
+          count_trivy artifacts/trivy-fs.json
+          count_trivy artifacts/trivy-image.json
+
+          # Gitleaks: count findings as HIGH by default (secret exposures are critical in practice)
+          if [ -f artifacts/gitleaks.json ]; then
+            gl=$(jq 'length' artifacts/gitleaks.json 2>/dev/null || echo 0)
+            HIGH=$((HIGH + gl))
+          fi
+
+          # Write summary markdown
+          echo "# DevSecOps Audit Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
+          echo "|---:|---:|" >> $GITHUB_STEP_SUMMARY
+          echo "| Critical | $CRITICAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| High | $HIGH |" >> $GITHUB_STEP_SUMMARY
+          echo "| Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
+          echo "| Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Artifacts uploaded: bandit*, gitleaks*, trivy-* (raw JSONs + SARIF where available)." >> $GITHUB_STEP_SUMMARY
+
+      # Ensure artifacts (SARIF + JSON + SBOM) are uploaded for later inspection
+      - name: Upload all raw artifacts (json + sarif + sbom)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: devsecops-artifacts
+          path: artifacts/**
