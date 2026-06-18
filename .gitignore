@@ -20,3 +20,4 @@ backups/
 
 # Docker
 .dockerignore
+kubeconfig
