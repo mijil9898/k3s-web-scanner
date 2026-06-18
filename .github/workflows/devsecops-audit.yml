@@ -45,7 +45,8 @@ jobs:
           pip install bandit==1.7.4      # pinned Bandit for SAST
           pip install sarif-om==1.0.4     # helper if needed for SARIF
           sudo apt-get update -y
-          sudo apt-get install -y jq docker.io ca-certificates curl
+          # Avoid installing docker.io on runner (runner already provides Docker; docker.io can conflict with containerd)
+          sudo apt-get install -y jq curl gh
 
       # ----------------------
       # SAST: Bandit (Python)
