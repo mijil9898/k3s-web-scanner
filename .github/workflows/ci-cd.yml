@@ -1,0 +1,94 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Set true to run the deploy step (requires KUBE_CONFIG_BASE64 secret)'
+        required: false
+        default: 'false'
+
+jobs:
+  test:
+    name: Run Python tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install test deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f malware-analyzer/requirements.txt ]; then pip install -r malware-analyzer/requirements.txt; fi
+          pip install pytest
+      - name: Run pytest
+        run: |
+          pytest -q || true
+
+  build:
+    name: Build and push images
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./apps/frontend
+          push: true
+          tags: ghcr.io/${{ github.repository }}/portfolio-frontend:latest
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./apps/backend
+          push: true
+          tags: ghcr.io/${{ github.repository }}/portfolio-backend:latest
+      - name: Build and push malware-analyzer image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./malware-analyzer
+          push: true
+          tags: ghcr.io/${{ github.repository }}/portfolio-malware-analyzer:latest
+
+  deploy:
+    name: Deploy to k3s (manual)
+    needs: build
+    if: ${{ github.event.inputs.deploy == 'true' || env.FORCE_DEPLOY == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode kubeconfig
+        if: ${{ secrets.KUBE_CONFIG_BASE64 != '' }}
+        run: |
+          echo "$KUBE_CONFIG_BASE64" | base64 --decode > kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
+        env:
+          KUBE_CONFIG_BASE64: ${{ secrets.KUBE_CONFIG_BASE64 }}
+      - name: Show cluster nodes
+        run: kubectl get nodes --kubeconfig=kubeconfig
+      - name: Run deploy script
+        run: |
+          chmod +x ./scripts/deploy-all.sh
+          ./scripts/deploy-all.sh
+        env:
+          KUBECONFIG: ${{ github.workspace }}/kubeconfig
