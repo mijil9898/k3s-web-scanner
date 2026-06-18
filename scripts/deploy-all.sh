@@ -9,9 +9,21 @@ IMAGE_NAME="malware-analyzer:latest"
 K3D_CLUSTER=${K3D_CLUSTER:-portfolio-dev}
 NAMESPACE=portfolio
 
+# Verify required CLI tools
+for cmd in docker kubectl helm; do
+  if ! command -v $cmd >/dev/null 2>&1; then
+    echo "Required command '$cmd' not found in PATH. Install/enable it before running." >&2
+    exit 2
+  fi
+done
+
 if [ ! -d "$MALWARE_DIR" ]; then
   echo "malware-analyzer not found at $MALWARE_DIR" >&2
   exit 2
+fi
+
+if ! command -v k3d >/dev/null 2>&1; then
+  echo "Warning: k3d not found. If you are using k3d, install it or set K3D_CLUSTER to a running cluster." >&2
 fi
 
 echo "Building Docker image from $MALWARE_DIR"
@@ -22,14 +34,19 @@ TMP_TAR=$(mktemp --suffix=-malware-analyzer.tar)
 echo "Saving image to $TMP_TAR"
 docker save $IMAGE_NAME -o "$TMP_TAR"
 
-echo "Importing image into k3d cluster $K3D_CLUSTER"
-k3d image import -c "$K3D_CLUSTER" "$TMP_TAR"
+if command -v k3d >/dev/null 2>&1; then
+  echo "Importing image into k3d cluster $K3D_CLUSTER"
+  k3d image import -c "$K3D_CLUSTER" "$TMP_TAR"
+else
+  echo "k3d not available; ensure the image $IMAGE_NAME is available to your cluster (push to registry)." >&2
+fi
+trap 'rm -f "$TMP_TAR" 2>/dev/null || true' EXIT
 
 echo "Ensure secret $NAMESPACE/malware-secrets exists (creating random values if missing)"
+kubectl -n $NAMESPACE create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
 if ! kubectl -n $NAMESPACE get secret malware-secrets >/dev/null 2>&1; then
   SECRET_KEY=$(openssl rand -hex 32)
   TOKEN=$(openssl rand -hex 16)
-  kubectl -n $NAMESPACE create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
   kubectl -n $NAMESPACE create secret generic malware-secrets \
     --from-literal=SECRET_KEY="$SECRET_KEY" \
     --from-literal=ANALYZE_AUTH_TOKEN="$TOKEN" \

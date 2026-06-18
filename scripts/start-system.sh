@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "🚀 Khởi động hệ thống K3s và tự động deploy (run-all)"
+echo "🚀 Khởi động hệ thống K3s và tự động deploy"
 
 # Default cluster/name
 K3D_CLUSTER=${K3D_CLUSTER:-portfolio-dev}
 NAMESPACE=${NAMESPACE:-portfolio}
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 command -v kubectl >/dev/null 2>&1 || { echo "kubectl không tìm thấy. Cấu hình KUBECONFIG trước khi chạy." >&2; exit 1; }
 
@@ -19,11 +22,12 @@ fi
 echo "⏳ Đang chờ Kubernetes API sẵn sàng..."
 kubectl wait --for=condition=Ready nodes --all --timeout=120s || true
 
-echo "📦 Chạy script tổng hợp deploy: scripts/run-all.sh"
-if [ -x "$(pwd)/scripts/run-all.sh" ]; then
-    scripts/run-all.sh || echo "[start-system] Lưu ý: scripts/run-all.sh trả lỗi; kiểm tra logs." >&2
+DEPLOY_SCRIPT="$SCRIPT_DIR/deploy-all.sh"
+echo "📦 Chạy script tổng hợp deploy: $DEPLOY_SCRIPT"
+if [ -f "$DEPLOY_SCRIPT" ]; then
+    bash "$DEPLOY_SCRIPT" || echo "[start-system] Lưu ý: deploy-all trả lỗi; kiểm tra logs." >&2
 else
-    echo "[start-system] Không tìm thấy script scripts/run-all.sh hoặc không có quyền thực thi." >&2
+    echo "[start-system] Không tìm thấy script $DEPLOY_SCRIPT." >&2
 fi
 
 # Optional: auto-create cloudflared secret and route DNS if env vars provided

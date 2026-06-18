@@ -46,6 +46,9 @@ malwareAnalyzer:
     pullPolicy: IfNotPresent
   service:
     port: 5000
+  # If true, the malware-analyzer will allow uploads from any client (no Bearer token required).
+  # Set to false to require ANALYZE_AUTH_TOKEN via the secret.
+  allowPublicUploads: true
   resources:
     requests:
       cpu: "250m"
