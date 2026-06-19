@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # URL.sh - tìm URL truy cập hiện tại cho dịch vụ (Quick Tunnel hoặc Named Tunnel)
-NAMESPACE=${1:-portfolio}
+NAMESPACE=${1:-mijil}
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "[URL.sh] Namespace: $NAMESPACE"

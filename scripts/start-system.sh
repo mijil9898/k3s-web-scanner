@@ -4,8 +4,8 @@ set -euo pipefail
 echo "🚀 Khởi động hệ thống K3s và tự động deploy"
 
 # Default cluster/name
-K3D_CLUSTER=${K3D_CLUSTER:-portfolio-dev}
-NAMESPACE=${NAMESPACE:-portfolio}
+K3D_CLUSTER=${K3D_CLUSTER:-mijil-dev}
+NAMESPACE=${NAMESPACE:-mijil}
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -14,7 +14,13 @@ command -v kubectl >/dev/null 2>&1 || { echo "kubectl không tìm thấy. Cấu 
 
 echo "🟢 Bắt đầu cluster k3d: $K3D_CLUSTER"
 if command -v k3d >/dev/null 2>&1; then
-    k3d cluster start "$K3D_CLUSTER"
+    if k3d cluster list | grep -q "$K3D_CLUSTER"; then
+        echo "🟢 Bắt đầu cluster k3d đã có: $K3D_CLUSTER"
+        k3d cluster start "$K3D_CLUSTER"
+    else
+        echo "🟢 Tạo mới cluster k3d: $K3D_CLUSTER"
+        k3d cluster create "$K3D_CLUSTER" --servers 1 --agents 1 -p "80:80@loadbalancer" -p "443:443@loadbalancer"
+    fi
 else
     echo "⚠️  k3d không cài đặt. Nếu bạn dùng k3s, đảm bảo kubeconfig trỏ tới cluster đúng." >&2
 fi

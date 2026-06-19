@@ -1,14 +1,14 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: portfolio-standard-ingress
-  namespace: portfolio
+  name: mijil-standard-ingress
+  namespace: mijil
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   ingressClassName: traefik
   rules:
-  - host: portfolio.local
+  - host: mijil.local
     http:
       paths:
       - path: /api

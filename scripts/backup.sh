@@ -5,7 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-NAMESPACE=${NAMESPACE:-portfolio}
+NAMESPACE=${NAMESPACE:-mijil}
 BACKUP_DIR="${BACKUP_DIR:-$REPO_ROOT/backups}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="$BACKUP_DIR/postgres_backup_$TIMESTAMP.sql.gz"
@@ -20,7 +20,7 @@ if [ -z "$POD" ]; then
 fi
 
 kubectl -n $NAMESPACE exec "$POD" -- \
-  pg_dumpall -U portfolio | gzip > "$BACKUP_FILE"
+  pg_dumpall -U mijil | gzip > "$BACKUP_FILE"
 
 echo "Backup lưu tại: $BACKUP_FILE"
 ls -lh "$BACKUP_DIR" || true

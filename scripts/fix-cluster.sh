@@ -2,13 +2,13 @@
 set -euo pipefail
 
 # fix-cluster.sh
-# Script hỗ trợ chẩn đoán và chuẩn bị các bước khôi phục cho namespace portfolio.
+# Script hỗ trợ chẩn đoán và chuẩn bị các bước khôi phục cho namespace mijil.
 # Chú ý: script này sẽ in các lệnh cần chạy để sửa; chỉ thực hiện hành động nguy hiểm
 # (force-delete, rollout restart) khi chạy với --apply (non-interactive).
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-NAMESPACE=${1:-portfolio}
+NAMESPACE=${1:-mijil}
 MODE="check" # check | apply
 
 if [ "${2:-}" = "--apply" ] || [ "${2:-}" = "apply" ]; then

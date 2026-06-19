@@ -18,6 +18,6 @@ CREATE TABLE IF NOT EXISTS contacts (
 
 INSERT INTO projects (title, description, tech_stack)
 VALUES
-  ('k3s-portfolio-platform', 'Full-stack K8s deployment',
+  ('k3s-mijil-platform', 'Full-stack K8s deployment',
    ARRAY['K3s','Docker','Helm','GitHub Actions'])
 ON CONFLICT DO NOTHING;

@@ -232,3 +232,4 @@ jobs:
           echo "| 🟠 High | $HIGH |" >> $GITHUB_STEP_SUMMARY
           echo "| 🟡 Medium | $MEDIUM |" >> $GITHUB_STEP_SUMMARY
           echo "| 🔵 Low | $LOW |" >> $GITHUB_STEP_SUMMARY
+          

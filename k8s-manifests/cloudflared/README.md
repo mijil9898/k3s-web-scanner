@@ -1,7 +1,7 @@
 Named Cloudflare Tunnel (Kubernetes)
 ===================================
 
-Steps to create a named Cloudflare Tunnel and run it in the `portfolio` namespace.
+Steps to create a named Cloudflare Tunnel and run it in the `mijil` namespace.
 
 1) On your workstation (local), install `cloudflared` and log in to Cloudflare:
 
@@ -20,7 +20,7 @@ Steps to create a named Cloudflare Tunnel and run it in the `portfolio` namespac
 3) Create the Kubernetes Secret from that file (do NOT commit the file into git):
 
    ```bash
-   kubectl -n portfolio create secret generic cloudflared-tunnel-credentials --from-file=credentials.json=~/.cloudflared/<TUNNEL-UUID>.json
+   kubectl -n mijil create secret generic cloudflared-tunnel-credentials --from-file=credentials.json=~/.cloudflared/<TUNNEL-UUID>.json
    ```
 
 4) Edit `cloudflared-configmap.yaml`: replace `<TUNNEL-UUID>` with the tunnel id from the credentials JSON and confirm the `hostname` in the ingress block is correct.
@@ -28,9 +28,9 @@ Steps to create a named Cloudflare Tunnel and run it in the `portfolio` namespac
 5) Apply the manifests:
 
    ```bash
-   kubectl -n portfolio apply -f k8s-manifests/cloudflared/cloudflared-configmap.yaml
-   kubectl -n portfolio apply -f k8s-manifests/cloudflared/named-tunnel-secret-example.yaml
-   kubectl -n portfolio apply -f k8s-manifests/cloudflared/cloudflared-deployment-named.yaml
+   kubectl -n mijil apply -f k8s-manifests/cloudflared/cloudflared-configmap.yaml
+   kubectl -n mijil apply -f k8s-manifests/cloudflared/named-tunnel-secret-example.yaml
+   kubectl -n mijil apply -f k8s-manifests/cloudflared/cloudflared-deployment-named.yaml
    ```
 
 6) Wait for the `cloudflared-named` pod to be Running and check logs for tunnel connection and hostname mapping.

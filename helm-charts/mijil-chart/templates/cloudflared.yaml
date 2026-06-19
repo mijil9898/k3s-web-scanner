@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cloudflared
-  namespace: portfolio
+  namespace: mijil
   labels:
     app: cloudflared
 spec:
@@ -22,7 +22,7 @@ spec:
           args:
             - "tunnel"
             - "--url"
-            - "http://malware-analyzer-service.portfolio.svc.cluster.local:5000"
+            - "http://frontend-service.mijil.svc.cluster.local:80"
           env:
             - name: TUNNEL_DEBUG
               value: "false"

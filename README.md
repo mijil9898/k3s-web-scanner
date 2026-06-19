@@ -1,206 +1,117 @@
-# k3s-portfolio-platform — Hướng dẫn sản xuất (Production)
+# Mijil Platform: Hệ Thống Phân Tích Mã Độc Toàn Diện
 
-Tài liệu này mô tả cách triển khai, cấu hình, bảo mật và vận hành ứng dụng "k3s-portfolio-platform" ở môi trường production (hoặc môi trường dev/k3s với các best-practices tương tự).
-
-Nội dung chính:
-- Tổng quan kiến trúc
-- Yêu cầu và chuẩn bị môi trường
-- Triển khai bằng k3d (local dev) hoặc k3s (production)
-- Cloudflare Tunnel: Quick Tunnel vs Named Tunnel
-- Quản lý secret và cấu hình bảo mật
-- Helm chart và manifest chính
-- Script tự động (start/stop/deploy)
-- CI/CD (GitHub Actions)
-- Khắc phục sự cố thường gặp
-- Bước tiếp theo đề xuất
+Mijil Platform là một nền tảng phân tích mã độc tĩnh (Static Malware Analysis) hoàn chỉnh, được thiết kế với kiến trúc Microservices và triển khai hoàn toàn tự động trên Kubernetes (K3s/K3d). Hệ thống kết hợp khả năng mở rộng của Kubernetes, bảo mật của Cloudflare Tunnel, và giao diện web hiện đại để cung cấp cái nhìn chi tiết về các tệp đáng ngờ.
 
 ---
 
-## 1. Tổng quan kiến trúc
+## 🏗 Kiến Trúc Hệ Thống (Architecture)
 
-Ứng dụng được tách thành các thành phần chính:
-- `malware-analyzer`: ứng dụng backend (Node.js/TypeScript) để phân tích mẫu
-- `database`: Postgres
-- `frontend`: giao diện (nếu có)
-- `cloudflared`: Cloudflare Tunnel để che phủ origin và cung cấp truy cập an toàn
+Hệ thống được chia thành các thành phần (services) chạy độc lập, giao tiếp với nhau qua mạng nội bộ của Kubernetes:
 
-Triển khai chính được quản lý bằng Helm chart ở `helm-charts/portfolio-chart`.
-
-## 2. Yêu cầu & Chuẩn bị
-
-- Kubernetes cluster: k3s (production) hoặc k3d (local dev).
-- `kubectl`, `helm`, `k3d` (nếu dùng k3d), `docker`/`podman`.
-- (Tùy chọn) `cloudflared` CLI để tạo Named Tunnel và login vào Cloudflare.
-- Quyền truy cập để tạo Secret trong namespace `portfolio`.
-
-## 3. Triển khai nhanh (Local dev với k3d)
-
-1. Tạo/start cluster k3d (ví dụ):
-
-```bash
-# tạo cluster (chỉ lần đầu)
-k3d cluster create portfolio-dev --servers 1 --agents 0
-
-# hoặc start nếu đã tồn tại
-k3d cluster start portfolio-dev
-```
-
-2. Chạy script khởi động tổng hợp (nếu cần):
-
-```bash
-cd k3s-portfolio-platform
-scripts/start-system.sh
-```
-
-3. Triển khai ứng dụng (build image, import vào k3d, helm deploy):
-
-```bash
-scripts/deploy-all.sh
-```
-
-Script `scripts/deploy-all.sh` sẽ:
-- Build image `malware-analyzer:latest` từ `apps/malware-analyzer`.
-- Lưu image thành tar và import vào k3d bằng `k3d image import`.
-- Tạo `namespace` và `Secret` `malware-secrets` nếu chưa có.
-- `helm upgrade --install portfolio` để triển khai chart.
-
-## 4. Triển khai vào production (k3s)
-
-Gợi ý an toàn:
-- Không expose Service `LoadBalancer` trực tiếp; sử dụng Cloudflare Tunnel hoặc Cloudflare-proxied DNS.
-- Chạy `malware-analyzer` không root trong container (tham khảo Dockerfile đã harden).
-- Sử dụng `ClusterIP` cho service, reverse proxy tại edge.
-
-Quy trình cơ bản (manual):
-
-```bash
-# Build image và push vào registry private (recommended)
-docker build -t ghcr.io/<org>/malware-analyzer:tag apps/malware-analyzer
-docker push ghcr.io/<org>/malware-analyzer:tag
-
-# Cập nhật values.yaml để dùng image trên registry
-helm upgrade --install portfolio helm-charts/portfolio-chart -n portfolio --create-namespace
-```
-
-## 5. Cloudflare Tunnel
-
-Hai lựa chọn để mở truy cập an toàn từ internet vào cluster:
-
-- Quick Tunnel (`cloudflared tunnel --url http://...` hoặc `cloudflared tunnel run`):
-  - Miễn phí, nhanh, nhưng URL thay đổi (ephemeral) — hữu dụng cho demo hoặc dev.
-  - `scripts/start-system.sh` và `scripts/deploy-all.sh` sẽ cố gắng tìm URL trycloudflare trong logs.
-
-- Named Tunnel (recommended cho production):
-  - Tạo tunnel có tên, cần domain đã thêm vào Cloudflare.
-  - Quy trình tóm tắt:
-
-```bash
-# 1. Đăng nhập trên máy dev (tạo credentials JSON)
-cloudflared login
-
-# 2. Tạo tunnel
-cloudflared tunnel create <TUNNEL-NAME>
-
-# 3. Route DNS (ví dụ)
-cloudflared tunnel route dns <TUNNEL-NAME> app.example.com
-
-# 4. Tạo Kubernetes Secret từ file credentials JSON
-kubectl -n portfolio create secret generic cloudflared-tunnel-credentials \
-  --from-file=credentials.json=~/.cloudflared/<TUNNEL-ID>.json --dry-run=client -o yaml | kubectl apply -f -
-
-# 5. Áp dụng manifests trong k8s-manifests/cloudflared
-kubectl -n portfolio apply -f k8s-manifests/cloudflared/cloudflared-configmap.yaml
-kubectl -n portfolio apply -f k8s-manifests/cloudflared/cloudflared-deployment-named.yaml
-```
-
-Lưu ý bảo mật: không commit file credentials JSON vào Git.
-
-## 6. Quản lý Secret
-
-Các Secret chính:
-- `malware-secrets`: `SECRET_KEY`, `ANALYZE_AUTH_TOKEN`, `VT_API_KEY`, `OTX_API_KEY`.
-- `cloudflared-tunnel-credentials`: file JSON credentials của tunnel.
-
-Tạo nhanh `malware-secrets` (nếu chưa có):
-
-```bash
-kubectl -n portfolio create secret generic malware-secrets \
-  --from-literal=SECRET_KEY=$(openssl rand -hex 32) \
-  --from-literal=ANALYZE_AUTH_TOKEN=$(openssl rand -hex 16) \
-  --from-literal=VT_API_KEY='' \
-  --from-literal=OTX_API_KEY=''
-```
-
-## 7. Helm chart
-
-Chart chính nằm ở `helm-charts/portfolio-chart` và gồm templates cho `malware-analyzer`, `database`, `frontend`, `cloudflared`.
-
-Để update image/values:
-
-```bash
-helm upgrade --install portfolio helm-charts/portfolio-chart -n portfolio --set malware.image.repository=ghcr.io/<org>/malware-analyzer,malware.image.tag=tag
-```
-
-## 8. Scripts quan trọng
-
-- `scripts/start-system.sh`: khởi cluster (k3d) và trigger deploy tổng hợp.
-- `scripts/stop-system.sh`: dừng/clean cluster (nếu dùng k3d).
-- `scripts/deploy-all.sh`: build image, import vào k3d, tạo secret, helm deploy.
-- `apps/malware-analyzer/scripts/deploy-to-k3s.sh`: script deploy chi tiết cho app (nếu cần chạy riêng).
-- `scripts/backup.sh`: backup Postgres (lưu vào `backups/`).
-
-Sử dụng:
-
-```bash
-# Khởi cluster và deploy
-scripts/start-system.sh
-
-# Chỉ deploy (build + helm)
-scripts/deploy-all.sh
-
-# Dừng cluster
-scripts/stop-system.sh
-```
-
-## 9. CI/CD
-
-Pipeline GitHub Actions nằm ở `.github/workflows/ci-cd.yaml` và thực hiện:
-- Quét bảo mật bằng Trivy
-- Build & push image lên registry (GHCR)
-- Upload báo cáo
-- (tùy chọn) notification Discord
-
-Lưu ý: workflow có thể yêu cầu secrets như `GHCR_TOKEN`, `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `DISCORD_WEBHOOK`.
-
-## 10. Bảo mật & Hardening (tóm tắt)
-
-- Chạy container non-root, set `HOME=/tmp` nếu cần.
-- Dùng immutable images, multi-stage build để giảm attack surface.
-- Chỉ mở port ở edge (Cloudflare), dùng WAF và rate-limiting.
-- Hạn chế RBAC quyền cho ServiceAccount.
-- Không commit credentials vào git; dùng k8s Secret hoặc Vault.
-
-## 11. Khắc phục sự cố thường gặp
-
-- ErrImagePull trên k3d: cần `docker save` -> `k3d image import` hoặc push image vào registry.
-- Cloudflared không show URL: kiểm tra logs `kubectl -n portfolio logs -l app=cloudflared`.
-- Named Tunnel lỗi: đảm bảo `cloudflared login` đã tạo credentials JSON và Secret đã được tạo.
-
-Ví dụ kiểm tra:
-
-```bash
-kubectl -n portfolio get pods
-kubectl -n portfolio logs -l app=cloudflared --tail=200
-kubectl -n portfolio describe pod <malware-pod>
-```
-
-## 12. Bước tiếp theo đề xuất
-
-- Hoàn thiện Named Tunnel cho hostname ổn định (domain + Cloudflare). 
-- Đưa image vào registry private (GHCR) và điều chỉnh Helm `values.yaml` dùng image registry.
-- Thêm secrets management (Vault / sealed-secrets) cho production.
-- Thêm job hardening & container scanning (Trivy) trong CI và blocking policy cho PR.
+- **Frontend (Nginx + HTML/CSS/JS)**: Giao diện người dùng web chuyên nghiệp với chủ đề Cybersecurity. Hỗ trợ đa ngôn ngữ (EN/VI), Dark Mode, và hiển thị trực quan quy trình phân tích (Pipeline) cùng báo cáo chi tiết.
+- **Malware Analyzer (Python/Flask + Gunicorn)**: Trái tim của hệ thống. Nhận file từ Frontend, thực hiện băm hash, phân tích cấu trúc PE, trích xuất chuỗi IoC, quét YARA rules, tra cứu VirusTotal, ánh xạ MITRE ATT&CK và xuất điểm rủi ro. Báo cáo lưu trữ qua Persistent Volume (PVC).
+- **Backend (Node.js/Express)**: Ứng dụng Backend API dùng để mở rộng thêm các nghiệp vụ (quản lý người dùng, lịch sử phân tích, logs,...).
+- **Database (PostgreSQL)**: Cơ sở dữ liệu lưu trữ dữ liệu của Backend (được cấu hình bằng StatefulSet).
+- **Cloudflare Tunnel (cloudflared)**: Đường hầm bảo mật giúp hệ thống nội bộ có thể được truy cập trực tiếp từ Internet thông qua URL public (`trycloudflare.com` hoặc domain thật) mà không cần cấu hình NAT, Port Forwarding, hay mở firewall.
+- **K3s / K3d**: Cụm Kubernetes hạng nhẹ quản lý toàn bộ vòng đời (scaling, self-healing) của các pods.
 
 ---
 
-Nếu bạn muốn mình commit file này và push lên `origin/main`, trả lời `Chạy` để mình thực hiện (hoặc mình gửi lệnh để bạn chạy thủ công).
+## 🛠 Yêu Cầu Hệ Thống (Prerequisites)
+
+Để chạy Mijil Platform ở môi trường Local Development, bạn cần:
+1. **Docker / Docker Desktop**: Để chạy container.
+2. **K3d**: Tạo cụm K3s trong Docker (`curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash`).
+3. **kubectl**: CLI tương tác với Kubernetes.
+4. **Helm v3**: Package manager cho K8s để cài đặt chart.
+5. **WSL (Windows Subsystem for Linux) hoặc Linux/macOS**.
+
+---
+
+## 🚀 Hướng Dẫn Khởi Động Nhanh (Quick Start)
+
+Mijil cung cấp một script duy nhất để cấu hình, build Docker image, import vào cụm, và cài đặt Helm Chart.
+
+### Bước 1: Khởi động toàn bộ hệ thống
+Mở terminal và chạy lệnh:
+```bash
+bash scripts/start-system.sh
+```
+
+**Quá trình này sẽ diễn ra:**
+1. Khởi động cụm `mijil-dev` bằng k3d.
+2. Build 3 Docker images: `mijil-frontend`, `mijil-backend`, `malware-analyzer`.
+3. Import images vào K3d để cluster có thể lấy được không cần Registry.
+4. Tạo namespace `mijil` và các Secret mặc định.
+5. `helm upgrade --install` thư mục `helm-charts/mijil-chart`.
+
+### Bước 2: Truy cập Giao diện Web
+Khi script kết thúc, Cloudflare Quick Tunnel sẽ tự động sinh ra một public URL có dạng `https://<random-words>.trycloudflare.com`.
+Bạn có thể xem URL này ở cuối output của log, hoặc chạy lệnh sau để lấy URL mới nhất:
+```bash
+kubectl -n mijil logs -l app=cloudflared --tail=100 | grep trycloudflare.com
+```
+👉 **Mở URL trên trình duyệt và trải nghiệm.**
+
+---
+
+## 📂 Cấu Trúc Mã Nguồn
+
+```text
+k3s-mijil-platform/
+├── apps/
+│   ├── frontend/         # Nginx web server, UI HTML tĩnh
+│   ├── backend/          # Node.js Express API
+│   ├── database/         # Postgres script khởi tạo (nếu không dùng Helm DB)
+│   └── malware-analyzer/ # Lõi phân tích tĩnh bằng Python
+├── helm-charts/
+│   └── mijil-chart/      # Chart chính cấu hình K8s Resources (Deployments, Services, PVC)
+├── k8s-manifests/        # (Tuỳ chọn) Các file manifest rời cho namespace, ingress
+└── scripts/
+    ├── start-system.sh   # Khởi động cụm + gọi deploy
+    ├── deploy-all.sh     # Build images + Helm install
+    ├── stop-system.sh    # Dừng cụm
+    └── URL.sh            # Script hỗ trợ tìm URL truy cập
+```
+
+---
+
+## ⚙ Cấu Hình Nâng Cao: Tên Miền Tùy Chỉnh (Named Tunnel)
+
+Nếu bạn không muốn dùng URL ngẫu nhiên của `trycloudflare.com`, bạn có thể kết nối với Cloudflare Zero Trust để dùng domain thật.
+
+1. Đăng nhập Cloudflare trên máy tính: `cloudflared tunnel login`.
+2. Tạo Tunnel: `cloudflared tunnel create mijil-tunnel`.
+3. Tạo CNAME DNS: `cloudflared tunnel route dns mijil-tunnel analyzer.yourdomain.com`.
+4. Export credentials ra file `credentials.json` và đưa vào Kubernetes dưới dạng secret.
+5. Cập nhật file `helm-charts/mijil-chart/values.yaml` (hoặc cấu hình file configmap) để truyền đúng `tunnel_id` và `credentials-file`.
+
+---
+
+## 🐛 Troubleshooting & Gỡ Lỗi
+
+Dưới đây là một số lệnh `kubectl` hữu ích để xem trạng thái hệ thống:
+
+**Kiểm tra tất cả các pod có đang chạy (Running) không:**
+```bash
+kubectl get pods -n mijil
+```
+
+**Xem log của Malware Analyzer:**
+```bash
+kubectl logs -l app=malware-analyzer -n mijil -f
+```
+
+**Xem log kết nối của Cloudflare Tunnel:**
+```bash
+kubectl logs -l app=cloudflared -n mijil -f
+```
+
+**Khởi động lại một service (VD: frontend) sau khi build image mới:**
+```bash
+kubectl rollout restart deployment frontend -n mijil
+```
+
+---
+
+*Hệ thống được thiết kế để dễ dàng CI/CD, tự động phục hồi (Self-healing), và mở rộng quy mô tuỳ nhu cầu (HPA).*

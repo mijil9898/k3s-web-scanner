@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: cloudflared-config
-  namespace: portfolio
+  namespace: mijil
 data:
   config.yml: |
     # Replace <TUNNEL-UUID> with the tunnel id from the credentials JSON.
@@ -10,5 +10,5 @@ data:
     credentials-file: /etc/cloudflared/credentials.json
     ingress:
       - hostname: note-audio-registry-scoring.trycloudflare.com
-        service: http://malware-analyzer-service.portfolio.svc.cluster.local:5000
+        service: http://frontend-service.mijil.svc.cluster.local:80
       - service: http_status:404

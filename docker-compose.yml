@@ -5,6 +5,7 @@ services:
       - '3000:80'
     depends_on:
       - backend
+      - malware-analyzer
     networks:
       - app-net
 
@@ -15,8 +16,8 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: "5432"
-      DB_NAME: portfolio
-      DB_USER: portfolio
+      DB_NAME: mijil
+      DB_USER: mijil
       DB_PASSWORD: secret
       NODE_ENV: development
       PORT: "8080"
@@ -27,11 +28,31 @@ services:
         aliases:
           - backend-service
 
+  malware-analyzer:
+    build: ./apps/malware-analyzer
+    ports:
+      - '5000:5000'
+    environment:
+      FLASK_DEBUG: "true"
+      SECRET_KEY: dev-secret-key-change-in-production
+      ALLOW_PUBLIC_UPLOADS: "true"
+      ANALYZE_RATE_LIMIT_PER_MINUTE: "60"
+      VT_API_KEY: ""
+      OTX_API_KEY: ""
+    volumes:
+      - ./apps/malware-analyzer/uploads:/app/uploads
+      - ./apps/malware-analyzer/reports:/app/reports
+      - ./apps/malware-analyzer/yara_rules:/app/yara_rules
+    networks:
+      app-net:
+        aliases:
+          - malware-analyzer-service
+
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: portfolio
-      POSTGRES_USER: portfolio
+      POSTGRES_DB: mijil
+      POSTGRES_USER: mijil
       POSTGRES_PASSWORD: secret
     volumes:
       - pgdata:/var/lib/postgresql/data

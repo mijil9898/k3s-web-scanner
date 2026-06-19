@@ -20,7 +20,7 @@ Examples:
   $0
   $0 --ref feature/xyz
   $0 --workflow "DevSecOps Audit & Visibility"
-  $0 --repo mijil9898/k3s-portfolio-platform
+  $0 --repo mijil9898/k3s-mijil-platform
 EOF
 }
 

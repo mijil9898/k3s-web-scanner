@@ -1,11 +1,10 @@
 global:
-  imageRegistry: ghcr.io
-  imagePullSecrets: [ghcr-secret]
+  imageRegistry: ""
 
 frontend:
   replicaCount: 2
   image:
-    repository: YOUR_GITHUB_USER/portfolio-frontend
+    repository: mijil-frontend
     tag: latest
     pullPolicy: IfNotPresent
   service:
@@ -20,8 +19,9 @@ frontend:
 backend:
   replicaCount: 2
   image:
-    repository: YOUR_GITHUB_USER/portfolio-backend
+    repository: mijil-backend
     tag: latest
+    pullPolicy: IfNotPresent
   env:
     NODE_ENV: production
     PORT: '8080'
@@ -33,7 +33,7 @@ database:
 
 ingress:
   enabled: true
-  host: portfolio.yourdomain.com
+  host: mijil.yourdomain.com
   tls: true
   clusterIssuer: letsencrypt-prod
 

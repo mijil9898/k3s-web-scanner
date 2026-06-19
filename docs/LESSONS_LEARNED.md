@@ -6,7 +6,7 @@ Tài liệu này tóm tắt các kết luận, quyết định, sự cố và b�
 ## Kết quả chính
 - Ứng dụng đã được đóng gói thành container với hình ảnh runtime được harden và chạy không phải root.
 - Triển khai lên cụm k3d cục bộ và mở ra Internet thông qua Cloudflare Quick Tunnel.
-- Đã tích hợp vào Helm chart (`helm-charts/portfolio-chart`) để quản lý `malware-analyzer` và `cloudflared` bằng Helm.
+- Đã tích hợp vào Helm chart (`helm-charts/mijil-chart`) để quản lý `malware-analyzer` và `cloudflared` bằng Helm.
 
 ## Bài học kỹ thuật quan trọng
 
@@ -16,7 +16,7 @@ Tài liệu này tóm tắt các kết luận, quyết định, sự cố và b�
 
 - File credentials của `cloudflared`
   - Named Tunnel yêu cầu file credentials (`~/.cloudflared/<TUNNEL-ID>.json`). KHÔNG commit file này vào Git.
-  - Tạo một Kubernetes Secret từ file này trong namespace `portfolio` và mount vào Deployment `cloudflared`.
+  - Tạo một Kubernetes Secret từ file này trong namespace `mijil` và mount vào Deployment `cloudflared`.
 
 - Vấn đề ảnh Docker trong k3d
   - Lỗi `ErrImagePull` xảy ra khi image chỉ có trong Docker daemon cục bộ nhưng chưa được load vào các node k3d.
@@ -40,11 +40,11 @@ Tài liệu này tóm tắt các kết luận, quyết định, sự cố và b�
 
 - Đăng ký domain qua Freenom có thể miễn phí nhưng nhiều tên có giá (premium). Thử các tên dài hơn hoặc thêm hậu tố (ví dụ `duonquan-dev.tk`) nếu tên chính bị tính phí.
 - Nếu không thể thêm domain vào Cloudflare, có thể dùng DuckDNS + Let's Encrypt để có HTTPS, nhưng sẽ mất khả năng bảo vệ edge của Cloudflare.
-- Dùng các lệnh `kubectl -n portfolio rollout status deployment/<name>` và `kubectl logs` để kiểm tra trạng thái pod `cloudflared` và ứng dụng.
+- Dùng các lệnh `kubectl -n mijil rollout status deployment/<name>` và `kubectl logs` để kiểm tra trạng thái pod `cloudflared` và ứng dụng.
 
 ## File & script quan trọng
-- `deploy-all.sh` — build image, import vào k3d, tạo secrets, và Helm deploy chart `portfolio`.
-- `helm-charts/portfolio-chart/` — template cho `malware-analyzer` và `cloudflared`.
+- `deploy-all.sh` — build image, import vào k3d, tạo secrets, và Helm deploy chart `mijil`.
+- `helm-charts/mijil-chart/` — template cho `malware-analyzer` và `cloudflared`.
 - `k8s-manifests/cloudflared/` — manifest và README cho deployment Named Tunnel.
 
 ## Các bước khuyến nghị tiếp theo

@@ -1,36 +1,36 @@
-.PHONY: dev build push deploy clean logs status
+.PHONY: dev test deploy-k3s full clean logs status help build
 
 # Biến - thay YOUR_GITHUB_USER
 GITHUB_USER ?= YOUR_GITHUB_USER
 IMAGE_TAG   ?= latest
-NAMESPACE   := portfolio
+NAMESPACE   := mijil
 
-# Chạy môi trường dev
+# Chạy môi trường dev (local) — full stack với Malware Analyzer
 dev:
 	docker compose up -d
-	@echo "Frontend: http://localhost:3000"
-	@echo "Backend:  http://localhost:8080"
+	@echo "================================"
+	@echo "  Ứng dụng đã khởi động:"
+	@echo "  Frontend:           http://localhost:3000"
+	@echo "  Backend API:        http://localhost:8080"
+	@echo "  Malware Analyzer:   http://localhost:5000"
+	@echo "  Database:           localhost:5433"
+	@echo "================================"
 
 # Build tất cả images
 build:
-	docker build -t portfolio-frontend:$(IMAGE_TAG) ./apps/frontend
-	docker build -t portfolio-backend:$(IMAGE_TAG)  ./apps/backend
+	docker compose build
 
-# Tag images cho GHCR
-tag: build
-	docker tag portfolio-frontend:$(IMAGE_TAG) \
-	  ghcr.io/$(GITHUB_USER)/portfolio-frontend:$(IMAGE_TAG)
-	docker tag portfolio-backend:$(IMAGE_TAG) \
-	  ghcr.io/$(GITHUB_USER)/portfolio-backend:$(IMAGE_TAG)
+# Test local + review code (dùng Docker Compose)
+test:
+	bash scripts/test-and-deploy.sh --test-only
 
-# Push lên GHCR
-push: tag
-	docker push ghcr.io/$(GITHUB_USER)/portfolio-frontend:$(IMAGE_TAG)
-	docker push ghcr.io/$(GITHUB_USER)/portfolio-backend:$(IMAGE_TAG)
+# Deploy frontend lên k3s/k3d cluster
+deploy-k3s:
+	bash scripts/test-and-deploy.sh --deploy
 
-# Deploy lên K3s
-deploy:
-	bash scripts/deploy.sh $(IMAGE_TAG)
+# Full pipeline: review → test local → deploy k3s
+full:
+	bash scripts/test-and-deploy.sh
 
 # Xem logs
 logs:
@@ -49,4 +49,16 @@ status:
 # Dọn dẹp
 clean:
 	docker compose down -v
-	helm uninstall portfolio -n $(NAMESPACE) || true
+	helm uninstall mijil -n $(NAMESPACE) || true
+
+# Hướng dẫn
+help:
+	@echo "Available commands:"
+	@echo "  make dev          - Chạy local full stack (frontend + backend + malware-analyzer + db)"
+	@echo "  make test         - Review code + test local (không deploy)"
+	@echo "  make deploy-k3s   - Build frontend + deploy lên k3s/k3d"
+	@echo "  make full         - Full pipeline: test -> deploy"
+	@echo "  make build        - Build tất cả images"
+	@echo "  make logs         - Xem logs từ k3s cluster"
+	@echo "  make status       - Xem trạng thái cluster"
+	@echo "  make clean        - Dọn dẹp (docker compose + helm)"
