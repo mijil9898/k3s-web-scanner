@@ -147,11 +147,11 @@ body{
 [data-theme="dark"] .theme-btn .icon-light{display:none}
 [data-theme="dark"] .theme-btn .icon-dark{display:inline}
 
-/* Lang toggle */
-.lang-btn .vi-label{display:inline}
-.lang-btn .en-label{display:none}
-[data-lang="en"] .lang-btn .vi-label{display:none}
-[data-lang="en"] .lang-btn .en-label{display:inline}
+/* Lang select */
+.lang-select{
+  cursor:pointer;outline:none;
+  padding-right:4px;
+}
 
 /* Mobile menu toggle */
 .mobile-menu-btn{
@@ -526,7 +526,7 @@ pre.json-pre{
   .logo-text{font-size:14px}
   .logo-icon{width:30px;height:30px;font-size:15px;border-radius:8px}
   .ctrl-btn{height:30px;padding:0 9px;font-size:11px}
-  .ctrl-btn span:not(.icon-light):not(.icon-dark):not(.vi-label):not(.en-label){display:none}
+  .ctrl-btn span:not(.icon-light):not(.icon-dark){display:none}
   .hero{padding:32px 14px 24px}
   .hero h1{font-size:22px}
   .hero p{font-size:13px}
@@ -569,15 +569,15 @@ pre.json-pre{
     <!-- Server status -->
     <div class="header-status" id="healthStatus" aria-live="polite">
       <span class="status-dot"></span>
-      <span id="statusLabel" data-vi="Đang kiểm tra..." data-en="Checking...">Đang kiểm tra...</span>
+      <span id="statusLabel" data-vi="Đang kiểm tra..." data-en="Checking..." data-zh="检查中...">Đang kiểm tra...</span>
     </div>
 
     <!-- Language toggle -->
-    <button class="ctrl-btn lang-btn" id="langBtn" onclick="toggleLang()" aria-label="Chuyển ngôn ngữ" title="Switch language">
-      <span>🌐</span>
-      <span class="vi-label">VI</span>
-      <span class="en-label">EN</span>
-    </button>
+    <select class="ctrl-btn lang-select" id="langSelect" onchange="applyLang(this.value)" aria-label="Chọn ngôn ngữ" title="Switch language">
+      <option value="vi">🇻🇳 VI</option>
+      <option value="en">🇬🇧 EN</option>
+      <option value="zh">🇨🇳 ZH</option>
+    </select>
 
     <!-- Dark mode toggle -->
     <button class="ctrl-btn theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Chuyển giao diện" title="Toggle theme">
@@ -659,48 +659,48 @@ pre.json-pre{
         <div class="pipeline-track" id="pipelineTrack">
           <div class="pipe-item" data-step="hash">
             <div class="pipe-item-icon">🔑</div>
-            <div class="pipe-item-label" data-vi="Tính toán Hash (MD5, SHA1, SHA256, SHA512)" data-en="Hash computation (MD5, SHA1, SHA256, SHA512)">Tính toán Hash (MD5, SHA1, SHA256, SHA512)</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-vi-done="✓ Xong" data-en-done="✓ Done">Chờ...</div>
+            <div class="pipe-item-label" data-vi="Tính toán Hash (MD5, SHA1, SHA256, SHA512)" data-en="Hash computation (MD5, SHA1, SHA256, SHA512)" data-zh="计算哈希 (MD5, SHA1, SHA256, SHA512)">Tính toán Hash (MD5, SHA1, SHA256, SHA512)</div>
+            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
           </div>
           <div class="pipe-item" data-step="entropy">
             <div class="pipe-item-icon">📊</div>
-            <div class="pipe-item-label" data-vi="Phân tích Entropy — phát hiện packer / mã hóa" data-en="Entropy analysis — detect packer / encryption">Phân tích Entropy — phát hiện packer / mã hóa</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-vi-done="✓ Xong" data-en-done="✓ Done">Chờ...</div>
+            <div class="pipe-item-label" data-vi="Phân tích Entropy — phát hiện packer / mã hóa" data-en="Entropy analysis — detect packer / encryption" data-zh="熵分析 — 检测加壳 / 加密">Phân tích Entropy — phát hiện packer / mã hóa</div>
+            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
           </div>
           <div class="pipe-item" data-step="pe">
             <div class="pipe-item-icon">⚙️</div>
-            <div class="pipe-item-label" data-vi="Phân tích cấu trúc PE — headers, sections, imports" data-en="PE structure — headers, sections, imports">Phân tích cấu trúc PE — headers, sections, imports</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-vi-done="✓ Xong" data-en-done="✓ Done">Chờ...</div>
+            <div class="pipe-item-label" data-vi="Phân tích cấu trúc PE — headers, sections, imports" data-en="PE structure — headers, sections, imports" data-zh="PE 结构分析 — headers, sections, imports">Phân tích cấu trúc PE — headers, sections, imports</div>
+            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
           </div>
           <div class="pipe-item" data-step="strings">
             <div class="pipe-item-icon">🔍</div>
-            <div class="pipe-item-label" data-vi="Trích xuất chuỗi & quét IoC (URL, IP, domain...)" data-en="String extraction & IoC scan (URL, IP, domain...)">Trích xuất chuỗi &amp; quét IoC (URL, IP, domain...)</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-vi-done="✓ Xong" data-en-done="✓ Done">Chờ...</div>
+            <div class="pipe-item-label" data-vi="Trích xuất chuỗi & quét IoC (URL, IP, domain...)" data-en="String extraction & IoC scan (URL, IP, domain...)" data-zh="字符串提取 & IoC 扫描 (URL, IP, 域名...)">Trích xuất chuỗi &amp; quét IoC (URL, IP, domain...)</div>
+            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
           </div>
           <div class="pipe-item" data-step="yara">
             <div class="pipe-item-icon">🎯</div>
-            <div class="pipe-item-label" data-vi="Quét YARA rules — so khớp chữ ký mã độc" data-en="YARA rules scan — malware signature matching">Quét YARA rules — so khớp chữ ký mã độc</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-vi-done="✓ Xong" data-en-done="✓ Done">Chờ...</div>
+            <div class="pipe-item-label" data-vi="Quét YARA rules — so khớp chữ ký mã độc" data-en="YARA rules scan — malware signature matching" data-zh="YARA 规则扫描 — 匹配恶意软件签名">Quét YARA rules — so khớp chữ ký mã độc</div>
+            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
           </div>
           <div class="pipe-item" data-step="vt">
             <div class="pipe-item-icon">🛡️</div>
-            <div class="pipe-item-label" data-vi="Tra cứu VirusTotal — kiểm tra SHA256" data-en="VirusTotal lookup — SHA256 check">Tra cứu VirusTotal — kiểm tra SHA256</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-vi-done="✓ Xong" data-en-done="✓ Done">Chờ...</div>
+            <div class="pipe-item-label" data-vi="Tra cứu VirusTotal — kiểm tra SHA256" data-en="VirusTotal lookup — SHA256 check" data-zh="VirusTotal 查询 — SHA256 检查">Tra cứu VirusTotal — kiểm tra SHA256</div>
+            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
           </div>
           <div class="pipe-item" data-step="office">
             <div class="pipe-item-icon">📝</div>
-            <div class="pipe-item-label" data-vi="Phân tích Office/PDF — VBA macro, JavaScript nhúng" data-en="Office/PDF analysis — VBA macro, embedded JS">Phân tích Office/PDF — VBA macro, JavaScript nhúng</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-vi-done="✓ Xong" data-en-done="✓ Done">Chờ...</div>
+            <div class="pipe-item-label" data-vi="Phân tích Office/PDF — VBA macro, JavaScript nhúng" data-en="Office/PDF analysis — VBA macro, embedded JS" data-zh="Office/PDF 分析 — VBA 宏, 嵌入式 JS">Phân tích Office/PDF — VBA macro, JavaScript nhúng</div>
+            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
           </div>
           <div class="pipe-item" data-step="mitre">
             <div class="pipe-item-icon">🗺️</div>
-            <div class="pipe-item-label" data-vi="Ánh xạ MITRE ATT&CK — kỹ thuật tấn công" data-en="MITRE ATT&CK mapping — attack techniques">Ánh xạ MITRE ATT&amp;CK — kỹ thuật tấn công</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-vi-done="✓ Xong" data-en-done="✓ Done">Chờ...</div>
+            <div class="pipe-item-label" data-vi="Ánh xạ MITRE ATT&CK — kỹ thuật tấn công" data-en="MITRE ATT&CK mapping — attack techniques" data-zh="MITRE ATT&CK 映射 — 攻击技术">Ánh xạ MITRE ATT&amp;CK — kỹ thuật tấn công</div>
+            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
           </div>
           <div class="pipe-item" data-step="risk">
             <div class="pipe-item-icon">⚠️</div>
-            <div class="pipe-item-label" data-vi="Tính điểm rủi ro tổng hợp (0–100)" data-en="Composite risk scoring (0–100)">Tính điểm rủi ro tổng hợp (0–100)</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-vi-done="✓ Xong" data-en-done="✓ Done">Chờ...</div>
+            <div class="pipe-item-label" data-vi="Tính điểm rủi ro tổng hợp (0–100)" data-en="Composite risk scoring (0–100)" data-zh="综合风险评分 (0–100)">Tính điểm rủi ro tổng hợp (0–100)</div>
+            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
           </div>
         </div>
       </div>
@@ -839,6 +839,61 @@ const T = {
     more:          'more',
     iocLabels:     {urls:'URLs',ipv4:'IPv4 Addresses',emails:'Emails',domains:'Domains',registry_keys:'Registry Keys',file_paths:'File Paths'},
     pageTitle:     'Malware Analyzer — Static Analysis Platform',
+  },
+  zh: {
+    heroBadge:     '🔍 静态恶意软件分析',
+    heroTitle:     '全面的恶意软件<br>分析与威胁情报',
+    heroDesc:      '上传可疑文件获取完整分析报告 — PE 结构, YARA, 熵, IoC, MITRE ATT&amp;CK 映射和风险评分。',
+    uploadTitle:   '将文件拖放到此处',
+    uploadDesc:    '或 <span class="browse-link" id="browseLink">浏览文件</span> — 最大 32 MB',
+    analyzeBtn:    '分析 →',
+    progressTitle: '正在分析文件...',
+    progressSub:   '根据文件大小可能需要几秒钟。',
+    errorTitle:    '⚠ 分析失败',
+    statusOnline:  '在线',
+    statusOffline: '离线',
+    statusCheck:   '检查中...',
+    footer:        '🛡 恶意软件分析器 · 所有分析在服务器端进行 · 文件分析后即被删除',
+    riskTitle:     '风险评估',
+    fileInfo:      '文件信息',
+    entropyTitle:  '熵分析',
+    peTitle:       'PE 分析',
+    stringsTitle:  '字符串 &amp; IoCs',
+    yaraTitle:     'YARA',
+    vtTitle:       'VirusTotal',
+    mitreTitle:    'MITRE ATT&amp;CK',
+    riskFactors:   '风险因素',
+    analysisWarn:  '分析警告',
+    rawJson:       '原始 JSON 报告',
+    dlHtml:        '📄 下载 HTML 报告',
+    dlJson:        '📁 下载 JSON 报告',
+    dlStix:        '🔒 导出 STIX 2.1 包',
+    newAnalysis:   '↺ 重新分析',
+    copyBtn:       '复制',
+    copied:        '已复制！',
+    copyJson:      '复制 JSON',
+    copiedJson:    '已复制！',
+    networkErr:    '网络错误 — 无法连接到服务器。',
+    sections:      '节区 (Sections)',
+    susImports:    '可疑导入 (Suspicious)',
+    filename:      '文件名',
+    filetype:      '文件类型',
+    filesize:      '大小',
+    overall:       '总体',
+    stats:         '统计',
+    arch:          '架构',
+    compileTime:   '编译时间',
+    entryPoint:    '入口点',
+    impHash:       'Import Hash',
+    detections:    '检测结果',
+    scanDate:      '扫描日期',
+    report:        '报告',
+    vtLink:        '在 VirusTotal 上查看 ↗',
+    riskSummary:   '评分',
+    entVerdict:    ['正常','中等偏高','可能是加壳/加密文件'],
+    more:          '更多',
+    iocLabels:     {urls:'URLs',ipv4:'IPv4 地址',emails:'电子邮件',domains:'域名',registry_keys:'注册表键',file_paths:'文件路径'},
+    pageTitle:     '恶意软件分析器 — 静态分析平台',
   }
 };
 
@@ -890,6 +945,9 @@ function applyLang(l) {
   document.documentElement.lang = lang;
   localStorage.setItem('ma-lang', lang);
 
+  const langSel = $('langSelect');
+  if (langSel && langSel.value !== lang) langSel.value = lang;
+
   document.title = t('pageTitle');
   $('heroBadge').textContent  = t('heroBadge').replace(/&amp;/g,'&');
   $('heroTitle').innerHTML    = t('heroTitle');
@@ -927,7 +985,7 @@ function applyLang(l) {
   /* if results already rendered, re-render */
   if (lastData) renderResults(lastData);
 }
-window.toggleLang = () => applyLang(lang === 'vi' ? 'en' : 'vi');
+window.applyLang = applyLang;
 
 /* ═══ Drag & Drop ═════════════════════════════════════ */
 ['dragenter','dragover','dragleave','drop'].forEach(ev => {

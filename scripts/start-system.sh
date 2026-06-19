@@ -28,13 +28,7 @@ fi
 echo "⏳ Đang chờ Kubernetes API sẵn sàng..."
 kubectl wait --for=condition=Ready nodes --all --timeout=120s || true
 
-DEPLOY_SCRIPT="$SCRIPT_DIR/deploy-all.sh"
-echo "📦 Chạy script tổng hợp deploy: $DEPLOY_SCRIPT"
-if [ -f "$DEPLOY_SCRIPT" ]; then
-    bash "$DEPLOY_SCRIPT" || echo "[start-system] Lưu ý: deploy-all trả lỗi; kiểm tra logs." >&2
-else
-    echo "[start-system] Không tìm thấy script $DEPLOY_SCRIPT." >&2
-fi
+echo "📦 Cluster đã sẵn sàng. Để deploy ứng dụng, hãy chạy thủ công script: ./scripts/deploy-all.sh"
 
 # Optional: auto-create cloudflared secret and route DNS if env vars provided
 # Set the following ENV vars in your shell (or export in CI):
