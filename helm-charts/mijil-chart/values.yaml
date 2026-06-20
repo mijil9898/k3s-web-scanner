@@ -69,3 +69,6 @@ cloudflared:
     tag: latest
   # Quick Tunnel mode using --url to point to in-cluster service
   quickTunnel: true
+
+monitoring:
+  enabled: true

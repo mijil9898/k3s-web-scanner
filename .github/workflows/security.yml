@@ -1,0 +1,232 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Daily at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-scan:
+    name: Security Scan (Non-blocking)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create artifacts directory
+        run: mkdir -p artifacts
+
+      # ──────────────────────────────────────────
+      # 1. SAST: Bandit (Python)
+      # ──────────────────────────────────────────
+      - name: Setup Python for Bandit
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Bandit
+        run: pip install "bandit==1.7.10" bandit-sarif-formatter
+
+      - name: Run Bandit — JSON
+        continue-on-error: true
+        run: bandit -r apps/malware-analyzer -f json -o artifacts/bandit.json || true
+
+      - name: Run Bandit — SARIF
+        continue-on-error: true
+        run: bandit -r apps/malware-analyzer -f sarif -o artifacts/bandit.sarif || true
+
+      - name: Upload Bandit SARIF to Security Tab
+        if: |
+          hashFiles('artifacts/bandit.sarif') != '' &&
+          (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: artifacts/bandit.sarif
+          category: bandit
+
+      # ──────────────────────────────────────────
+      # 2. Secret Scanning: Gitleaks
+      # ──────────────────────────────────────────
+      - name: Install Gitleaks v8.18.4
+        run: |
+          GL_VER=8.18.4
+          curl -sL "https://github.com/gitleaks/gitleaks/releases/download/v${GL_VER}/gitleaks_${GL_VER}_linux_x64.tar.gz" \
+            | tar xz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+
+      - name: Run Gitleaks — JSON
+        continue-on-error: true
+        run: |
+          gitleaks detect --source . \
+            --report-format json \
+            --report-path artifacts/gitleaks.json \
+            --no-git || true
+
+      - name: Run Gitleaks — SARIF
+        continue-on-error: true
+        run: |
+          gitleaks detect --source . \
+            --report-format sarif \
+            --report-path artifacts/gitleaks.sarif \
+            --no-git || true
+
+      - name: Upload Gitleaks SARIF to Security Tab
+        if: |
+          hashFiles('artifacts/gitleaks.sarif') != '' &&
+          (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: artifacts/gitleaks.sarif
+          category: gitleaks
+
+      # ──────────────────────────────────────────
+      # 3. SCA: Trivy Filesystem
+      # ──────────────────────────────────────────
+      - name: Run Trivy FS — JSON
+        uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: true
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "json"
+          output: "artifacts/trivy-fs.json"
+
+      - name: Run Trivy FS — SARIF
+        uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: true
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "artifacts/trivy-fs.sarif"
+
+      - name: Upload Trivy FS SARIF to Security Tab
+        if: |
+          hashFiles('artifacts/trivy-fs.sarif') != '' &&
+          (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: artifacts/trivy-fs.sarif
+          category: trivy-fs
+
+      # ──────────────────────────────────────────
+      # 4. Upload raw JSON artifacts
+      # ──────────────────────────────────────────
+      - name: Install jq
+        if: always()
+        run: sudo apt-get install -y jq
+
+      - name: Upload Bandit JSON
+        if: always() && hashFiles('artifacts/bandit.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-results
+          path: artifacts/bandit.json
+          retention-days: 30
+
+      - name: Upload Gitleaks JSON
+        if: always() && hashFiles('artifacts/gitleaks.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-results
+          path: artifacts/gitleaks.json
+          retention-days: 30
+
+      - name: Upload Trivy FS JSON
+        if: always() && hashFiles('artifacts/trivy-fs.json') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-fs-results
+          path: artifacts/trivy-fs.json
+          retention-days: 30
+
+      # ──────────────────────────────────────────
+      # 5. Aggregate findings → Job Summary
+      # ──────────────────────────────────────────
+      - name: Aggregate findings and write Job Summary
+        if: always()
+        run: |
+          CRITICAL=0; HIGH=0; MEDIUM=0; LOW=0
+
+          count_trivy() {
+            local file="$1"
+            if [ -f "$file" ]; then
+              c=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity=="CRITICAL")] | length' "$file" 2>/dev/null || echo 0)
+              h=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity=="HIGH")] | length' "$file" 2>/dev/null || echo 0)
+              m=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity=="MEDIUM")] | length' "$file" 2>/dev/null || echo 0)
+              l=$(jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity=="LOW")] | length' "$file" 2>/dev/null || echo 0)
+              CRITICAL=$((CRITICAL + c)); HIGH=$((HIGH + h)); MEDIUM=$((MEDIUM + m)); LOW=$((LOW + l))
+            fi
+          }
+
+          if [ -f artifacts/bandit.json ]; then
+            bc=$(jq '[.results[]? | select(.issue_severity=="HIGH")] | length' artifacts/bandit.json 2>/dev/null || echo 0)
+            bm=$(jq '[.results[]? | select(.issue_severity=="MEDIUM")] | length' artifacts/bandit.json 2>/dev/null || echo 0)
+            bl=$(jq '[.results[]? | select(.issue_severity=="LOW")] | length' artifacts/bandit.json 2>/dev/null || echo 0)
+            HIGH=$((HIGH + bc)); MEDIUM=$((MEDIUM + bm)); LOW=$((LOW + bl))
+          fi
+
+          count_trivy artifacts/trivy-fs.json
+
+          if [ -f artifacts/gitleaks.json ]; then
+            gl=$(jq 'if type == "array" then length else 0 end' artifacts/gitleaks.json 2>/dev/null || echo 0)
+            HIGH=$((HIGH + gl))
+          fi
+
+          TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW))
+
+          if [ "$CRITICAL" -gt 0 ]; then
+            STATUS="🔴 CRITICAL issues found"
+          elif [ "$HIGH" -gt 0 ]; then
+            STATUS="🟠 HIGH issues found"
+          elif [ "$MEDIUM" -gt 0 ] || [ "$LOW" -gt 0 ]; then
+            STATUS="🟡 Low/Medium issues found"
+          else
+            STATUS="✅ No issues found"
+          fi
+
+          {
+            echo "# 🛡️ Security Scan Summary"
+            echo ""
+            echo "**Status**: $STATUS | **Commit**: \`${{ github.sha }}\`"
+            echo ""
+            echo "| Severity | Count |"
+            echo "|:---------|------:|"
+            echo "| 🔴 Critical | $CRITICAL |"
+            echo "| 🟠 High     | $HIGH |"
+            echo "| 🟡 Medium   | $MEDIUM |"
+            echo "| 🔵 Low      | $LOW |"
+            echo "| **Total**   | **$TOTAL** |"
+            echo ""
+            echo "---"
+            echo "| Tool | Version | Scope |"
+            echo "|------|---------|-------|"
+            echo "| Bandit | 1.7.10 | apps/malware-analyzer (Python SAST) |"
+            echo "| Gitleaks | 8.18.4 | Full repo (Secret scanning) |"
+            echo "| Trivy FS | 0.28.0 | Full repo (SCA dependencies) |"
+            if [ "$CRITICAL" -gt 0 ]; then
+              echo ""
+              echo "> [!CAUTION]"
+              echo "> **$CRITICAL CRITICAL vulnerabilities detected.** Download artifacts and remediate before merging."
+            fi
+          } >> $GITHUB_STEP_SUMMARY

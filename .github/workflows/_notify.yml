@@ -1,0 +1,119 @@
+name: _Notify (Reusable)
+
+# Reusable workflow — called by cd.yml via `uses: ./.github/workflows/_notify.yml`
+on:
+  workflow_call:
+    inputs:
+      status:
+        description: "Job status: success | failure | cancelled"
+        type: string
+        required: true
+      service_list:
+        description: "Comma-separated list of services built"
+        type: string
+        required: false
+        default: "frontend, backend, malware-analyzer"
+      run_url:
+        description: "URL of the GitHub Actions run"
+        type: string
+        required: true
+      sha:
+        description: "Git commit SHA"
+        type: string
+        required: true
+      ref_name:
+        description: "Branch or tag name"
+        type: string
+        required: true
+    secrets:
+      TELEGRAM_BOT_TOKEN:
+        required: false
+      TELEGRAM_CHAT_ID:
+        required: false
+      DISCORD_WEBHOOK_URL:
+        required: false
+
+jobs:
+  notify:
+    name: Send Notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build message payload
+        id: msg
+        run: |
+          SHORT_SHA="${{ inputs.sha }}"
+          SHORT_SHA="${SHORT_SHA:0:7}"
+
+          if [ "${{ inputs.status }}" = "success" ]; then
+            EMOJI="✅"
+            TITLE="Deploy Succeeded"
+            COLOR="3066993"   # Discord green
+          elif [ "${{ inputs.status }}" = "failure" ]; then
+            EMOJI="❌"
+            TITLE="Deploy Failed"
+            COLOR="15158332"  # Discord red
+          else
+            EMOJI="⚠️"
+            TITLE="Deploy Cancelled"
+            COLOR="16776960"  # Discord yellow
+          fi
+
+          {
+            echo "emoji=$EMOJI"
+            echo "title=$TITLE"
+            echo "color=$COLOR"
+            echo "short_sha=$SHORT_SHA"
+          } >> $GITHUB_OUTPUT
+
+      # ──────────────────────────────────────────
+      # Telegram
+      # ──────────────────────────────────────────
+      - name: Send Telegram notification
+        if: |
+          env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_CHAT_ID != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          TEXT="${{ steps.msg.outputs.emoji }} *${{ steps.msg.outputs.title }}*
+
+          🏷 Branch: \`${{ inputs.ref_name }}\`
+          🔖 Commit: \`${{ steps.msg.outputs.short_sha }}\`
+          📦 Services: ${{ inputs.service_list }}
+          🔗 [View Run](${{ inputs.run_url }})"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"chat_id\": \"${TELEGRAM_CHAT_ID}\",
+              \"text\": $(echo "$TEXT" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'),
+              \"parse_mode\": \"Markdown\",
+              \"disable_web_page_preview\": true
+            }"
+
+      # ──────────────────────────────────────────
+      # Discord
+      # ──────────────────────────────────────────
+      - name: Send Discord notification
+        if: |
+          env.DISCORD_WEBHOOK_URL != ''
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          SHORT_SHA="${{ steps.msg.outputs.short_sha }}"
+
+          curl -s -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"${{ steps.msg.outputs.emoji }} ${{ steps.msg.outputs.title }}\",
+                \"color\": ${{ steps.msg.outputs.color }},
+                \"fields\": [
+                  { \"name\": \"Branch\",    \"value\": \"\`${{ inputs.ref_name }}\`\",   \"inline\": true },
+                  { \"name\": \"Commit\",    \"value\": \"\`${SHORT_SHA}\`\",              \"inline\": true },
+                  { \"name\": \"Services\",  \"value\": \"${{ inputs.service_list }}\",   \"inline\": false }
+                ],
+                \"url\": \"${{ inputs.run_url }}\",
+                \"footer\": { \"text\": \"GitHub Actions\" }
+              }]
+            }"
