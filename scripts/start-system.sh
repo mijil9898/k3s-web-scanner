@@ -17,6 +17,27 @@ if command -v k3d >/dev/null 2>&1; then
     if k3d cluster list | grep -q "$K3D_CLUSTER"; then
         echo "🟢 Bắt đầu cluster k3d đã có: $K3D_CLUSTER"
         k3d cluster start "$K3D_CLUSTER"
+
+        # Fix: sau restart, serverlb có thể bị mất khỏi Docker network → nginx crash loop.
+        # Nếu serverlb đang restarting hoặc chưa join network → reconnect và restart.
+        SERVERLB="k3d-${K3D_CLUSTER}-serverlb"
+        NETWORK="k3d-${K3D_CLUSTER}"
+        IS_IN_NET=$(docker network inspect "$NETWORK" \
+            --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null | grep -c "$SERVERLB" || true)
+        IS_RESTARTING=$(docker inspect "$SERVERLB" \
+            --format '{{.State.Restarting}}' 2>/dev/null || echo "false")
+        if [ "$IS_IN_NET" -eq 0 ] || [ "$IS_RESTARTING" = "true" ]; then
+            echo "🔌 serverlb chưa join network hoặc đang crash — reconnect và restart..."
+            docker network connect "$NETWORK" "$SERVERLB" 2>/dev/null || true
+            docker restart "$SERVERLB"
+            # Chờ serverlb ổn định
+            for j in $(seq 1 10); do
+                STATUS=$(docker inspect "$SERVERLB" --format '{{.State.Restarting}}' 2>/dev/null || echo "true")
+                [ "$STATUS" = "false" ] && break
+                sleep 2
+            done
+            echo "✅ serverlb đã ổn định"
+        fi
     else
         echo "🟢 Tạo mới cluster k3d: $K3D_CLUSTER"
         k3d cluster create "$K3D_CLUSTER" --servers 1 --agents 1 -p "80:80@loadbalancer" -p "443:443@loadbalancer"
