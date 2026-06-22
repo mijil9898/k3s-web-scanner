@@ -1,1126 +1,1955 @@
 <!DOCTYPE html>
 <html lang="vi" data-theme="light" data-lang="vi">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Malware Analyzer — Nền tảng phân tích mã độc tĩnh</title>
-<meta name="description" content="Tải file lên để phân tích mã độc tĩnh: PE, YARA, entropy, chuỗi IoC, MITRE ATT&CK và chấm điểm rủi ro.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-/* ═══════════════════════════════════════════
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Malware Analyzer — Nền tảng phân tích mã độc tĩnh</title>
+  <meta name="description"
+    content="Tải file lên để phân tích mã độc tĩnh: PE, YARA, entropy, chuỗi IoC, MITRE ATT&CK và chấm điểm rủi ro.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
    DESIGN TOKENS — Light & Dark
 ═══════════════════════════════════════════ */
-:root {
-  --bg:          #ffffff;
-  --bg-surface:  #f8fafc;
-  --bg-card:     #ffffff;
-  --bg-card-h:   #f1f5f9;
-  --border:      #e2e8f0;
-  --border-h:    #cbd5e1;
-  --text:        #0f172a;
-  --text-m:      #475569;
-  --text-d:      #94a3b8;
-  --accent:      #2563eb;
-  --accent-h:    #1d4ed8;
-  --accent-g:    rgba(37,99,235,.07);
-  --green:       #059669;
-  --yellow:      #d97706;
-  --orange:      #ea580c;
-  --red:         #dc2626;
-  --purple:      #7c3aed;
-  --cyan:        #0891b2;
-  --hero-from:   #f0f6ff;
-  --hero-to:     #ffffff;
-  --header-bg:   rgba(255,255,255,.92);
-  --shadow-s:    0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
-  --shadow-m:    0 4px 16px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);
-  --shadow-l:    0 10px 40px rgba(0,0,0,.10),0 4px 12px rgba(0,0,0,.05);
-  --font:        'Be Vietnam Pro',-apple-system,BlinkMacSystemFont,sans-serif;
-  --mono:        'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
-  --r:           12px;
-  --r-s:         8px;
-  --transition:  .25s ease;
-}
+    :root {
+      --bg: #ffffff;
+      --bg-surface: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-h: #f1f5f9;
+      --border: #e2e8f0;
+      --border-h: #cbd5e1;
+      --text: #0f172a;
+      --text-m: #475569;
+      --text-d: #94a3b8;
+      --accent: #2563eb;
+      --accent-h: #1d4ed8;
+      --accent-g: rgba(37, 99, 235, .07);
+      --green: #059669;
+      --yellow: #d97706;
+      --orange: #ea580c;
+      --red: #dc2626;
+      --purple: #7c3aed;
+      --cyan: #0891b2;
+      --hero-from: #f0f6ff;
+      --hero-to: #ffffff;
+      --header-bg: rgba(255, 255, 255, .92);
+      --shadow-s: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .04);
+      --shadow-m: 0 4px 16px rgba(0, 0, 0, .08), 0 2px 6px rgba(0, 0, 0, .04);
+      --shadow-l: 0 10px 40px rgba(0, 0, 0, .10), 0 4px 12px rgba(0, 0, 0, .05);
+      --font: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      --r: 12px;
+      --r-s: 8px;
+      --transition: .25s ease;
+    }
 
-[data-theme="dark"] {
-  --bg:          #080c14;
-  --bg-surface:  #0f1520;
-  --bg-card:     #131b2e;
-  --bg-card-h:   #1a2540;
-  --border:      #1e2d44;
-  --border-h:    #2a4060;
-  --text:        #e8edf5;
-  --text-m:      #8899b0;
-  --text-d:      #4a5c72;
-  --accent:      #3b82f6;
-  --accent-h:    #2563eb;
-  --accent-g:    rgba(59,130,246,.12);
-  --green:       #10b981;
-  --yellow:      #eab308;
-  --orange:      #f97316;
-  --red:         #ef4444;
-  --purple:      #a855f7;
-  --cyan:        #22d3ee;
-  --hero-from:   #080c14;
-  --hero-to:     #0c1422;
-  --header-bg:   rgba(8,12,20,.88);
-  --shadow-s:    0 1px 3px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
-  --shadow-m:    0 4px 16px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.3);
-  --shadow-l:    0 10px 40px rgba(0,0,0,.5),0 4px 12px rgba(0,0,0,.35);
-}
+    [data-theme="dark"] {
+      --bg: #080c14;
+      --bg-surface: #0f1520;
+      --bg-card: #131b2e;
+      --bg-card-h: #1a2540;
+      --border: #1e2d44;
+      --border-h: #2a4060;
+      --text: #e8edf5;
+      --text-m: #8899b0;
+      --text-d: #4a5c72;
+      --accent: #3b82f6;
+      --accent-h: #2563eb;
+      --accent-g: rgba(59, 130, 246, .12);
+      --green: #10b981;
+      --yellow: #eab308;
+      --orange: #f97316;
+      --red: #ef4444;
+      --purple: #a855f7;
+      --cyan: #22d3ee;
+      --hero-from: #080c14;
+      --hero-to: #0c1422;
+      --header-bg: rgba(8, 12, 20, .88);
+      --shadow-s: 0 1px 3px rgba(0, 0, 0, .4), 0 1px 2px rgba(0, 0, 0, .3);
+      --shadow-m: 0 4px 16px rgba(0, 0, 0, .4), 0 2px 6px rgba(0, 0, 0, .3);
+      --shadow-l: 0 10px 40px rgba(0, 0, 0, .5), 0 4px 12px rgba(0, 0, 0, .35);
+    }
 
-/* ═══════════════════════════════════════════
+    /* ═══════════════════════════════════════════
    RESET & BASE
 ═══════════════════════════════════════════ */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{
-  font-family:var(--font);
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  display:flex;flex-direction:column;
-  line-height:1.6;
-  -webkit-font-smoothing:antialiased;
-  transition:background var(--transition),color var(--transition);
-}
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
 
-/* ═══════════════════════════════════════════
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    /* ═══════════════════════════════════════════
    HEADER
 ═══════════════════════════════════════════ */
-.header{
-  position:sticky;top:0;z-index:200;
-  background:var(--header-bg);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border);
-  padding:0 24px;height:60px;
-  display:flex;align-items:center;justify-content:space-between;
-  box-shadow:var(--shadow-s);
-  transition:background var(--transition),border-color var(--transition);
-}
-.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
-.logo-icon{
-  width:34px;height:34px;border-radius:9px;flex-shrink:0;
-  background:linear-gradient(135deg,#2563eb,#7c3aed);
-  display:flex;align-items:center;justify-content:center;
-  font-size:17px;color:#fff;font-weight:700;
-  box-shadow:0 2px 8px rgba(37,99,235,.35);
-  transition:transform .5s ease;
-}
-.logo:hover .logo-icon{transform:rotate(360deg)}
-.logo-text{font-size:15px;font-weight:700;letter-spacing:-.3px;white-space:nowrap}
-.logo-sub{font-size:10px;color:var(--text-d);font-weight:400;margin-left:3px}
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: var(--header-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-s);
+      transition: background var(--transition), border-color var(--transition);
+    }
 
-.header-right{display:flex;align-items:center;gap:8px}
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text)
+    }
 
-/* Status */
-.header-status{
-  display:flex;align-items:center;gap:6px;
-  font-size:12px;color:var(--text-m);font-weight:500;
-  padding:5px 10px;border-radius:20px;
-  border:1px solid var(--border);background:var(--bg-surface);
-  transition:background var(--transition),border-color var(--transition);
-}
-.status-dot{
-  width:7px;height:7px;border-radius:50%;background:var(--green);
-  box-shadow:0 0 6px var(--green);
-  animation:breathe 3s ease-in-out infinite;flex-shrink:0;
-}
-@keyframes breathe{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+    .logo-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, .35);
+      transition: transform .5s ease;
+    }
 
-/* Toggle buttons shared style */
-.ctrl-btn{
-  display:flex;align-items:center;justify-content:center;gap:5px;
-  height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--border);
-  background:var(--bg-surface);color:var(--text-m);font-size:12px;font-weight:600;
-  cursor:pointer;font-family:var(--font);
-  transition:all var(--transition);white-space:nowrap;
-}
-.ctrl-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-g)}
+    .logo:hover .logo-icon {
+      transform: rotate(360deg)
+    }
 
-/* Dark mode toggle */
-.theme-btn .icon-light{display:inline}
-.theme-btn .icon-dark{display:none}
-[data-theme="dark"] .theme-btn .icon-light{display:none}
-[data-theme="dark"] .theme-btn .icon-dark{display:inline}
+    .logo-text {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -.3px;
+      white-space: nowrap
+    }
 
-/* Lang select */
-.lang-select{
-  cursor:pointer;outline:none;
-  padding-right:4px;
-}
+    .logo-sub {
+      font-size: 10px;
+      color: var(--text-d);
+      font-weight: 400;
+      margin-left: 3px
+    }
 
-/* Mobile menu toggle */
-.mobile-menu-btn{
-  display:none;height:34px;width:34px;padding:0;
-  align-items:center;justify-content:center;
-  border-radius:8px;border:1px solid var(--border);
-  background:var(--bg-surface);color:var(--text-m);
-  cursor:pointer;font-size:16px;
-  transition:all var(--transition);
-}
-.mobile-menu-btn:hover{border-color:var(--accent);color:var(--accent)}
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px
+    }
 
-/* ═══════════════════════════════════════════
+    /* Status */
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-m);
+      font-weight: 500;
+      padding: 5px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: breathe 3s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes breathe {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1)
+      }
+
+      50% {
+        opacity: .6;
+        transform: scale(1.3)
+      }
+    }
+
+    /* Toggle buttons shared style */
+    .ctrl-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-m);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+
+    .ctrl-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-g)
+    }
+
+    /* Dark mode toggle */
+    .theme-btn .icon-light {
+      display: inline
+    }
+
+    .theme-btn .icon-dark {
+      display: none
+    }
+
+    [data-theme="dark"] .theme-btn .icon-light {
+      display: none
+    }
+
+    [data-theme="dark"] .theme-btn .icon-dark {
+      display: inline
+    }
+
+    /* Lang select */
+    .lang-select {
+      cursor: pointer;
+      outline: none;
+      padding-right: 4px;
+    }
+
+    /* Mobile menu toggle */
+    .mobile-menu-btn {
+      display: none;
+      height: 34px;
+      width: 34px;
+      padding: 0;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-m);
+      cursor: pointer;
+      font-size: 16px;
+      transition: all var(--transition);
+    }
+
+    .mobile-menu-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    /* ═══════════════════════════════════════════
    HERO
 ═══════════════════════════════════════════ */
-.hero{
-  text-align:center;padding:56px 24px 44px;
-  background:linear-gradient(180deg,var(--hero-from) 0%,var(--hero-to) 100%);
-  border-bottom:1px solid var(--border);
-  transition:background var(--transition),border-color var(--transition);
-}
-.hero-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  background:var(--accent-g);border:1px solid rgba(37,99,235,.25);
-  border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;
-  color:var(--accent);margin-bottom:18px;
-  transition:background var(--transition),border-color var(--transition);
-}
-.hero h1{
-  font-size:clamp(24px,4vw,38px);font-weight:800;letter-spacing:-.8px;
-  background:linear-gradient(135deg,var(--text) 30%,var(--accent) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;margin-bottom:12px;line-height:1.2;
-}
-.hero p{
-  color:var(--text-m);font-size:clamp(14px,2vw,16px);
-  max-width:540px;margin:0 auto 32px;line-height:1.7;
-}
+    .hero {
+      text-align: center;
+      padding: 56px 24px 44px;
+      background: linear-gradient(180deg, var(--hero-from) 0%, var(--hero-to) 100%);
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition), border-color var(--transition);
+    }
 
-/* Pipeline display */
-.pipeline{
-  display:flex;align-items:center;justify-content:center;
-  flex-wrap:wrap;gap:4px;margin-bottom:4px;
-}
-.pipe-step{
-  display:flex;align-items:center;gap:6px;
-  background:var(--bg-card);border:1px solid var(--border);
-  border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;
-  color:var(--text-m);box-shadow:var(--shadow-s);
-  transition:all var(--transition);cursor:default;white-space:nowrap;
-}
-.pipe-step:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 0 3px var(--accent-g)}
-.pipe-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--border-h);transition:background var(--transition);
-}
-.pipe-step:hover .pipe-dot{background:var(--accent)}
-.pipe-arrow{color:var(--text-d);font-size:12px;padding:0 2px;flex-shrink:0}
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-g);
+      border: 1px solid rgba(37, 99, 235, .25);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 18px;
+      transition: background var(--transition), border-color var(--transition);
+    }
 
-/* ═══════════════════════════════════════════
+    .hero h1 {
+      font-size: clamp(24px, 4vw, 38px);
+      font-weight: 800;
+      letter-spacing: -.8px;
+      background: linear-gradient(135deg, var(--text) 30%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      color: var(--text-m);
+      font-size: clamp(14px, 2vw, 16px);
+      max-width: 540px;
+      margin: 0 auto 32px;
+      line-height: 1.7;
+    }
+
+    /* Pipeline display */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .pipe-step {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-m);
+      box-shadow: var(--shadow-s);
+      transition: all var(--transition);
+      cursor: default;
+      white-space: nowrap;
+    }
+
+    .pipe-step:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-g)
+    }
+
+    .pipe-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--border-h);
+      transition: background var(--transition);
+    }
+
+    .pipe-step:hover .pipe-dot {
+      background: var(--accent)
+    }
+
+    .pipe-arrow {
+      color: var(--text-d);
+      font-size: 12px;
+      padding: 0 2px;
+      flex-shrink: 0
+    }
+
+    /* ═══════════════════════════════════════════
    MAIN LAYOUT
 ═══════════════════════════════════════════ */
-.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:36px 16px 80px}
-.container{width:100%;max-width:800px}
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 16px 80px
+    }
 
-/* ═══════════════════════════════════════════
+    .container {
+      width: 100%;
+      max-width: 800px
+    }
+
+    /* ═══════════════════════════════════════════
    UPLOAD ZONE
 ═══════════════════════════════════════════ */
-.upload-zone{
-  border:2px dashed var(--border-h);border-radius:16px;
-  padding:56px 32px;text-align:center;cursor:pointer;
-  transition:all var(--transition);
-  background:var(--bg-surface);box-shadow:var(--shadow-s);
-}
-.upload-zone:hover,.upload-zone.is-dragover{
-  border-color:var(--accent);background:var(--accent-g);
-  box-shadow:0 0 0 4px var(--accent-g),var(--shadow-m);
-  transform:scale(1.008);
-}
-.upload-icon{
-  width:70px;height:70px;margin:0 auto 18px;border-radius:20px;
-  background:linear-gradient(135deg,rgba(37,99,235,.12),rgba(124,58,237,.12));
-  display:flex;align-items:center;justify-content:center;font-size:30px;
-  border:1px solid rgba(37,99,235,.18);
-  transition:transform var(--transition);
-}
-.upload-zone:hover .upload-icon{transform:scale(1.08)}
-.upload-zone h2{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)}
-.upload-zone p{color:var(--text-m);font-size:14px;margin-bottom:18px}
-.browse-link{color:var(--accent);font-weight:600;text-decoration:underline}
-.upload-exts{display:flex;flex-wrap:wrap;justify-content:center;gap:5px}
-.ext-badge{
-  background:var(--bg-card);border:1px solid var(--border);border-radius:6px;
-  padding:3px 9px;font-size:11px;color:var(--text-m);font-family:var(--mono);
-  transition:all var(--transition);
-}
-.ext-badge:hover{border-color:var(--accent);color:var(--accent)}
-input[type="file"]{display:none}
+    .upload-zone {
+      border: 2px dashed var(--border-h);
+      border-radius: 16px;
+      padding: 56px 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: var(--bg-surface);
+      box-shadow: var(--shadow-s);
+    }
 
-/* File Preview */
-.file-preview{
-  display:none;margin-top:14px;
-  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);
-  padding:14px 18px;box-shadow:var(--shadow-s);
-  transition:background var(--transition),border-color var(--transition);
-}
-.file-preview.is-visible{display:flex;align-items:center;gap:12px}
-.file-preview-icon{font-size:26px;flex-shrink:0}
-.file-preview-info{flex:1;min-width:0}
-.file-preview-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.file-preview-size{font-size:12px;color:var(--text-m);margin-top:2px}
-.analyze-btn{
-  padding:10px 20px;border-radius:var(--r-s);font-size:13px;font-weight:700;
-  background:linear-gradient(135deg,var(--accent),var(--purple));
-  color:#fff;border:none;cursor:pointer;flex-shrink:0;
-  box-shadow:0 4px 12px rgba(37,99,235,.3);
-  transition:all var(--transition);font-family:var(--font);
-}
-.analyze-btn:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(37,99,235,.4)}
-.analyze-btn:active{transform:translateY(0)}
-.analyze-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+    .upload-zone:hover,
+    .upload-zone.is-dragover {
+      border-color: var(--accent);
+      background: var(--accent-g);
+      box-shadow: 0 0 0 4px var(--accent-g), var(--shadow-m);
+      transform: scale(1.008);
+    }
 
-/* ═══════════════════════════════════════════
+    .upload-icon {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 18px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, .12), rgba(124, 58, 237, .12));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      border: 1px solid rgba(37, 99, 235, .18);
+      transition: transform var(--transition);
+    }
+
+    .upload-zone:hover .upload-icon {
+      transform: scale(1.08)
+    }
+
+    .upload-zone h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text)
+    }
+
+    .upload-zone p {
+      color: var(--text-m);
+      font-size: 14px;
+      margin-bottom: 18px
+    }
+
+    .browse-link {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: underline
+    }
+
+    .upload-exts {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 5px
+    }
+
+    .ext-badge {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: 11px;
+      color: var(--text-m);
+      font-family: var(--mono);
+      transition: all var(--transition);
+    }
+
+    .ext-badge:hover {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    input[type="file"] {
+      display: none
+    }
+
+    /* File Preview */
+    .file-preview {
+      display: none;
+      margin-top: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 18px;
+      box-shadow: var(--shadow-s);
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .file-preview.is-visible {
+      display: flex;
+      align-items: center;
+      gap: 12px
+    }
+
+    .file-preview-icon {
+      font-size: 26px;
+      flex-shrink: 0
+    }
+
+    .file-preview-info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .file-preview-name {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+
+    .file-preview-size {
+      font-size: 12px;
+      color: var(--text-m);
+      margin-top: 2px
+    }
+
+    .analyze-btn {
+      padding: 10px 20px;
+      border-radius: var(--r-s);
+      font-size: 13px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .3);
+      transition: all var(--transition);
+      font-family: var(--font);
+    }
+
+    .analyze-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, .4)
+    }
+
+    .analyze-btn:active {
+      transform: translateY(0)
+    }
+
+    .analyze-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none
+    }
+
+    /* ═══════════════════════════════════════════
    PROGRESS PIPELINE
 ═══════════════════════════════════════════ */
-.progress-section{display:none;margin-top:28px}
-.progress-section.is-visible{display:block}
-.progress-card{
-  background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
-  padding:24px;box-shadow:var(--shadow-m);
-  transition:background var(--transition),border-color var(--transition);
-}
-.progress-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
-.progress-spinner{
-  width:38px;height:38px;flex-shrink:0;
-  border:3px solid var(--border);border-top-color:var(--accent);
-  border-radius:50%;animation:spin .8s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-.progress-title{font-size:15px;font-weight:700;margin-bottom:2px}
-.progress-sub{font-size:12px;color:var(--text-m)}
+    .progress-section {
+      display: none;
+      margin-top: 28px
+    }
 
-.pipeline-track{display:flex;flex-direction:column;gap:8px}
-.pipe-item{
-  display:flex;align-items:center;gap:12px;
-  padding:11px 14px;border-radius:10px;border:1px solid var(--border);
-  background:var(--bg-surface);font-size:13px;font-weight:500;
-  transition:all .3s ease;
-}
-.pipe-item.is-active{
-  border-color:rgba(37,99,235,.4);background:var(--accent-g);
-  color:var(--accent);box-shadow:0 0 0 3px var(--accent-g);
-}
-.pipe-item.is-done{
-  border-color:rgba(5,150,105,.25);
-  background:rgba(5,150,105,.05);color:var(--green);
-}
-[data-theme="dark"] .pipe-item.is-done{background:rgba(16,185,129,.06)}
-.pipe-item-icon{
-  width:30px;height:30px;border-radius:7px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:14px;background:var(--border);flex-shrink:0;
-  transition:background .3s;
-}
-.pipe-item.is-active .pipe-item-icon{background:rgba(37,99,235,.15)}
-.pipe-item.is-done .pipe-item-icon{background:rgba(5,150,105,.12)}
-.pipe-item-label{flex:1;font-size:12px;line-height:1.4}
-.pipe-item-status{
-  font-size:11px;font-weight:700;font-family:var(--mono);
-  color:var(--text-d);white-space:nowrap;
-}
-.pipe-item.is-active .pipe-item-status{color:var(--accent)}
-.pipe-item.is-done .pipe-item-status{color:var(--green)}
+    .progress-section.is-visible {
+      display: block
+    }
 
-/* ═══════════════════════════════════════════
+    .progress-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-m);
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .progress-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px
+    }
+
+    .progress-spinner {
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg)
+      }
+    }
+
+    .progress-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 2px
+    }
+
+    .progress-sub {
+      font-size: 12px;
+      color: var(--text-m)
+    }
+
+    .pipeline-track {
+      display: flex;
+      flex-direction: column;
+      gap: 8px
+    }
+
+    .pipe-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      font-size: 13px;
+      font-weight: 500;
+      transition: all .3s ease;
+    }
+
+    .pipe-item.is-active {
+      border-color: rgba(37, 99, 235, .4);
+      background: var(--accent-g);
+      color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-g);
+    }
+
+    .pipe-item.is-done {
+      border-color: rgba(5, 150, 105, .25);
+      background: rgba(5, 150, 105, .05);
+      color: var(--green);
+    }
+
+    [data-theme="dark"] .pipe-item.is-done {
+      background: rgba(16, 185, 129, .06)
+    }
+
+    .pipe-item-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      background: var(--border);
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+
+    .pipe-item.is-active .pipe-item-icon {
+      background: rgba(37, 99, 235, .15)
+    }
+
+    .pipe-item.is-done .pipe-item-icon {
+      background: rgba(5, 150, 105, .12)
+    }
+
+    .pipe-item-label {
+      flex: 1;
+      font-size: 12px;
+      line-height: 1.4
+    }
+
+    .pipe-item-status {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--mono);
+      color: var(--text-d);
+      white-space: nowrap;
+    }
+
+    .pipe-item.is-active .pipe-item-status {
+      color: var(--accent)
+    }
+
+    .pipe-item.is-done .pipe-item-status {
+      color: var(--green)
+    }
+
+    /* ═══════════════════════════════════════════
    ERROR
 ═══════════════════════════════════════════ */
-.error-card{
-  display:none;margin-top:24px;
-  background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.2);
-  border-radius:var(--r);padding:18px 22px;
-}
-.error-card.is-visible{display:block}
-.error-card h3{color:var(--red);font-size:14px;font-weight:700;margin-bottom:6px}
-.error-card p{font-size:13px;color:var(--text-m)}
+    .error-card {
+      display: none;
+      margin-top: 24px;
+      background: rgba(220, 38, 38, .05);
+      border: 1px solid rgba(220, 38, 38, .2);
+      border-radius: var(--r);
+      padding: 18px 22px;
+    }
 
-/* ═══════════════════════════════════════════
+    .error-card.is-visible {
+      display: block
+    }
+
+    .error-card h3 {
+      color: var(--red);
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 6px
+    }
+
+    .error-card p {
+      font-size: 13px;
+      color: var(--text-m)
+    }
+
+    /* ═══════════════════════════════════════════
    RESULTS
 ═══════════════════════════════════════════ */
-.results-section{display:none;margin-top:28px}
-.results-section.is-visible{display:block}
+    .results-section {
+      display: none;
+      margin-top: 28px
+    }
 
-/* Risk Banner */
-.risk-banner{
-  display:flex;align-items:center;gap:22px;
-  background:var(--bg-card);border:1px solid var(--border);
-  border-left:4px solid var(--risk-color,var(--green));
-  border-radius:16px;padding:22px 26px;margin-bottom:16px;
-  box-shadow:var(--shadow-m);
-  transition:background var(--transition),border-color var(--transition);
-}
-.risk-gauge{
-  width:84px;height:84px;border-radius:50%;flex-shrink:0;
-  background:conic-gradient(var(--risk-color) calc(var(--risk-pct)*1%),var(--border) 0);
-  display:flex;align-items:center;justify-content:center;position:relative;
-}
-.risk-gauge::before{
-  content:'';position:absolute;inset:8px;
-  background:var(--bg-card);border-radius:50%;
-  transition:background var(--transition);
-}
-.risk-gauge-val{position:relative;z-index:1;font-size:20px;font-weight:800;font-family:var(--mono)}
-.risk-info{flex:1;min-width:0}
-.risk-info h3{font-size:17px;font-weight:700;margin-bottom:4px}
-.risk-info p{font-size:13px;color:var(--text-m);line-height:1.5}
-.risk-badge{
-  display:inline-block;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;
-  background:rgba(var(--risk-rgb),.12);color:var(--risk-color);margin-top:8px;letter-spacing:.5px;
-}
+    .results-section.is-visible {
+      display: block
+    }
 
-/* Cards */
-.result-card{
-  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r);
-  margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow-s);
-  transition:box-shadow var(--transition),background var(--transition),border-color var(--transition);
-}
-.result-card:hover{box-shadow:var(--shadow-m)}
-.card-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;cursor:pointer;user-select:none;
-  transition:background var(--transition);
-}
-.card-head:hover{background:var(--bg-card-h)}
-.card-head-left{display:flex;align-items:center;gap:10px}
-.card-head-icon{
-  width:30px;height:30px;border-radius:7px;
-  background:var(--bg-surface);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;font-size:14px;
-  transition:background var(--transition),border-color var(--transition);
-}
-.card-head h3{font-size:13px;font-weight:700}
-.card-chevron{font-size:10px;color:var(--text-d);transition:transform .2s}
-.result-card.is-open .card-chevron{transform:rotate(180deg)}
-.card-body{
-  display:none;padding:0 18px 16px;font-size:13px;line-height:1.7;
-  border-top:1px solid var(--border);
-  transition:border-color var(--transition);
-}
-.result-card.is-open .card-body{display:block}
+    /* Risk Banner */
+    .risk-banner {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--risk-color, var(--green));
+      border-radius: 16px;
+      padding: 22px 26px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-m);
+      transition: background var(--transition), border-color var(--transition);
+    }
 
-/* Table */
-.info-table{width:100%;border-collapse:collapse;margin-top:4px}
-.info-table tr{border-bottom:1px solid var(--border)}
-.info-table tr:last-child{border:0}
-.info-table td{padding:8px 0;vertical-align:top}
-.info-table .label{
-  color:var(--text-m);width:140px;font-size:11px;
-  text-transform:uppercase;letter-spacing:.6px;font-weight:600;
-}
-.info-table .value{font-family:var(--mono);font-size:12px;word-break:break-all;color:var(--text)}
+    .risk-gauge {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: conic-gradient(var(--risk-color) calc(var(--risk-pct)*1%), var(--border) 0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
 
-/* Tags */
-.tag-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-.tag{
-  background:var(--bg-surface);border:1px solid var(--border);border-radius:6px;
-  padding:3px 9px;font-size:11px;font-family:var(--mono);color:var(--text-m);
-  transition:all .15s;
-}
-.tag:hover{transform:translateY(-1px);box-shadow:var(--shadow-s)}
-.tag--warn  {border-color:rgba(217,119,6,.3);color:var(--yellow);background:rgba(217,119,6,.07)}
-.tag--danger{border-color:rgba(220,38,38,.3);color:var(--red);background:rgba(220,38,38,.07)}
-.tag--ok    {border-color:rgba(5,150,105,.3);color:var(--green);background:rgba(5,150,105,.07)}
-.tag--info  {border-color:rgba(8,145,178,.3);color:var(--cyan);background:rgba(8,145,178,.07)}
+    .risk-gauge::before {
+      content: '';
+      position: absolute;
+      inset: 8px;
+      background: var(--bg-card);
+      border-radius: 50%;
+      transition: background var(--transition);
+    }
 
-[data-theme="dark"] .tag--warn  {background:rgba(234,179,8,.07)}
-[data-theme="dark"] .tag--danger{background:rgba(239,68,68,.07)}
-[data-theme="dark"] .tag--ok    {background:rgba(16,185,129,.07)}
-[data-theme="dark"] .tag--info  {background:rgba(34,211,238,.07)}
+    .risk-gauge-val {
+      position: relative;
+      z-index: 1;
+      font-size: 20px;
+      font-weight: 800;
+      font-family: var(--mono)
+    }
 
-/* Copy button */
-.copy-btn{
-  background:none;border:1px solid var(--border);border-radius:5px;
-  color:var(--text-m);font-size:11px;padding:2px 7px;cursor:pointer;
-  margin-left:6px;transition:all var(--transition);font-family:var(--font);
-}
-.copy-btn:hover{border-color:var(--accent);color:var(--accent)}
-.copy-btn.is-copied{border-color:var(--green);color:var(--green)}
+    .risk-info {
+      flex: 1;
+      min-width: 0
+    }
 
-/* Section sub-heading */
-.card-section-title{
-  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
-  color:var(--text-m);margin:14px 0 6px;
-}
+    .risk-info h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px
+    }
 
-/* Download bar */
-.download-bar{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
-.dl-btn{
-  flex:1;min-width:150px;
-  display:flex;align-items:center;justify-content:center;gap:7px;
-  padding:12px 16px;border-radius:var(--r-s);font-size:13px;font-weight:700;
-  text-decoration:none;border:1px solid var(--border);color:var(--text);
-  background:var(--bg-card);transition:all var(--transition);
-  cursor:pointer;font-family:var(--font);box-shadow:var(--shadow-s);
-}
-.dl-btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-m);border-color:var(--border-h)}
-.dl-btn--primary{
-  background:linear-gradient(135deg,var(--accent),var(--purple));
-  border-color:transparent;color:#fff;
-  box-shadow:0 4px 12px rgba(37,99,235,.28);
-}
-.dl-btn--primary:hover{box-shadow:0 6px 20px rgba(37,99,235,.4)}
+    .risk-info p {
+      font-size: 13px;
+      color: var(--text-m);
+      line-height: 1.5
+    }
 
-/* New Analysis button */
-.new-analysis{display:flex;justify-content:center;margin-top:24px}
-.new-btn{
-  padding:10px 28px;border-radius:var(--r-s);font-size:13px;font-weight:700;
-  background:transparent;border:1px solid var(--border);color:var(--text-m);
-  cursor:pointer;transition:all var(--transition);font-family:var(--font);
-}
-.new-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+    .risk-badge {
+      display: inline-block;
+      padding: 3px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(var(--risk-rgb), .12);
+      color: var(--risk-color);
+      margin-top: 8px;
+      letter-spacing: .5px;
+    }
 
-/* JSON pre */
-pre.json-pre{
-  background:var(--bg-surface);border:1px solid var(--border);
-  border-radius:var(--r-s);padding:14px;max-height:380px;
-  overflow-y:auto;font-family:var(--mono);font-size:11px;
-  white-space:pre-wrap;word-break:break-all;color:var(--text);margin-top:8px;
-  transition:background var(--transition),border-color var(--transition);
-}
-.json-key    {color:#7c3aed;font-weight:600}
-.json-string {color:var(--green)}
-.json-number {color:var(--orange)}
-.json-boolean{color:var(--accent)}
-.json-null   {color:var(--text-d)}
-[data-theme="dark"] .json-key{color:#a78bfa}
+    /* Cards */
+    .result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      margin-bottom: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow-s);
+      transition: box-shadow var(--transition), background var(--transition), border-color var(--transition);
+    }
 
-/* ═══════════════════════════════════════════
+    .result-card:hover {
+      box-shadow: var(--shadow-m)
+    }
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--transition);
+    }
+
+    .card-head:hover {
+      background: var(--bg-card-h)
+    }
+
+    .card-head-left {
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .card-head-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .card-head h3 {
+      font-size: 13px;
+      font-weight: 700
+    }
+
+    .card-chevron {
+      font-size: 10px;
+      color: var(--text-d);
+      transition: transform .2s
+    }
+
+    .result-card.is-open .card-chevron {
+      transform: rotate(180deg)
+    }
+
+    .card-body {
+      display: none;
+      padding: 0 18px 16px;
+      font-size: 13px;
+      line-height: 1.7;
+      border-top: 1px solid var(--border);
+      transition: border-color var(--transition);
+    }
+
+    .result-card.is-open .card-body {
+      display: block
+    }
+
+    /* Table */
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px
+    }
+
+    .info-table tr {
+      border-bottom: 1px solid var(--border)
+    }
+
+    .info-table tr:last-child {
+      border: 0
+    }
+
+    .info-table td {
+      padding: 8px 0;
+      vertical-align: top
+    }
+
+    .info-table .label {
+      color: var(--text-m);
+      width: 140px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      font-weight: 600;
+    }
+
+    .info-table .value {
+      font-family: var(--mono);
+      font-size: 12px;
+      word-break: break-all;
+      color: var(--text)
+    }
+
+    /* Tags */
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 8px
+    }
+
+    .tag {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--text-m);
+      transition: all .15s;
+    }
+
+    .tag:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-s)
+    }
+
+    .tag--warn {
+      border-color: rgba(217, 119, 6, .3);
+      color: var(--yellow);
+      background: rgba(217, 119, 6, .07)
+    }
+
+    .tag--danger {
+      border-color: rgba(220, 38, 38, .3);
+      color: var(--red);
+      background: rgba(220, 38, 38, .07)
+    }
+
+    .tag--ok {
+      border-color: rgba(5, 150, 105, .3);
+      color: var(--green);
+      background: rgba(5, 150, 105, .07)
+    }
+
+    .tag--info {
+      border-color: rgba(8, 145, 178, .3);
+      color: var(--cyan);
+      background: rgba(8, 145, 178, .07)
+    }
+
+    [data-theme="dark"] .tag--warn {
+      background: rgba(234, 179, 8, .07)
+    }
+
+    [data-theme="dark"] .tag--danger {
+      background: rgba(239, 68, 68, .07)
+    }
+
+    [data-theme="dark"] .tag--ok {
+      background: rgba(16, 185, 129, .07)
+    }
+
+    [data-theme="dark"] .tag--info {
+      background: rgba(34, 211, 238, .07)
+    }
+
+    /* Copy button */
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text-m);
+      font-size: 11px;
+      padding: 2px 7px;
+      cursor: pointer;
+      margin-left: 6px;
+      transition: all var(--transition);
+      font-family: var(--font);
+    }
+
+    .copy-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent)
+    }
+
+    .copy-btn.is-copied {
+      border-color: var(--green);
+      color: var(--green)
+    }
+
+    /* Section sub-heading */
+    .card-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--text-m);
+      margin: 14px 0 6px;
+    }
+
+    /* Download bar */
+    .download-bar {
+      display: flex;
+      gap: 8px;
+      margin-top: 18px;
+      flex-wrap: wrap
+    }
+
+    .dl-btn {
+      flex: 1;
+      min-width: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 12px 16px;
+      border-radius: var(--r-s);
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: var(--bg-card);
+      transition: all var(--transition);
+      cursor: pointer;
+      font-family: var(--font);
+      box-shadow: var(--shadow-s);
+    }
+
+    .dl-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-m);
+      border-color: var(--border-h)
+    }
+
+    .dl-btn--primary {
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, .28);
+    }
+
+    .dl-btn--primary:hover {
+      box-shadow: 0 6px 20px rgba(37, 99, 235, .4)
+    }
+
+    /* New Analysis button */
+    .new-analysis {
+      display: flex;
+      justify-content: center;
+      margin-top: 24px
+    }
+
+    .new-btn {
+      padding: 10px 28px;
+      border-radius: var(--r-s);
+      font-size: 13px;
+      font-weight: 700;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-m);
+      cursor: pointer;
+      transition: all var(--transition);
+      font-family: var(--font);
+    }
+
+    .new-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px)
+    }
+
+    /* JSON pre */
+    pre.json-pre {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-s);
+      padding: 14px;
+      max-height: 380px;
+      overflow-y: auto;
+      font-family: var(--mono);
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: var(--text);
+      margin-top: 8px;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .json-key {
+      color: #7c3aed;
+      font-weight: 600
+    }
+
+    .json-string {
+      color: var(--green)
+    }
+
+    .json-number {
+      color: var(--orange)
+    }
+
+    .json-boolean {
+      color: var(--accent)
+    }
+
+    .json-null {
+      color: var(--text-d)
+    }
+
+    [data-theme="dark"] .json-key {
+      color: #a78bfa
+    }
+
+    /* ═══════════════════════════════════════════
    FOOTER
 ═══════════════════════════════════════════ */
-.footer{
-  border-top:1px solid var(--border);padding:20px 24px;
-  text-align:center;font-size:12px;color:var(--text-d);
-  background:var(--bg-surface);
-  transition:background var(--transition),border-color var(--transition);
-}
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 24px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-d);
+      background: var(--bg-surface);
+      transition: background var(--transition), border-color var(--transition);
+    }
 
-/* ═══════════════════════════════════════════
+    /* ═══════════════════════════════════════════
    ANIMATIONS
 ═══════════════════════════════════════════ */
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-.fade-up{animation:fadeUp .35s ease both}
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px)
+      }
 
-/* ═══════════════════════════════════════════
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    .fade-up {
+      animation: fadeUp .35s ease both
+    }
+
+    /* ═══════════════════════════════════════════
    RESPONSIVE — TABLET (≤768px)
 ═══════════════════════════════════════════ */
-@media(max-width:768px){
-  .header{padding:0 16px;height:56px}
-  .logo-sub{display:none}
-  .header-status{display:none}
-  .pipeline{display:none} /* hide on tablet, show pipeline in progress only */
-  .hero{padding:40px 16px 32px}
-  .hero p{margin-bottom:20px}
-  .main{padding:24px 12px 60px}
-  .upload-zone{padding:44px 20px}
-}
+    @media(max-width:768px) {
+      .header {
+        padding: 0 16px;
+        height: 56px
+      }
 
-/* ═══════════════════════════════════════════
+      .logo-sub {
+        display: none
+      }
+
+      .header-status {
+        display: none
+      }
+
+      .pipeline {
+        display: none
+      }
+
+      /* hide on tablet, show pipeline in progress only */
+      .hero {
+        padding: 40px 16px 32px
+      }
+
+      .hero p {
+        margin-bottom: 20px
+      }
+
+      .main {
+        padding: 24px 12px 60px
+      }
+
+      .upload-zone {
+        padding: 44px 20px
+      }
+    }
+
+    /* ═══════════════════════════════════════════
    RESPONSIVE — MOBILE (≤480px)
 ═══════════════════════════════════════════ */
-@media(max-width:480px){
-  .header{padding:0 12px;height:52px}
-  .logo-text{font-size:14px}
-  .logo-icon{width:30px;height:30px;font-size:15px;border-radius:8px}
-  .ctrl-btn{height:30px;padding:0 9px;font-size:11px}
-  .ctrl-btn span:not(.icon-light):not(.icon-dark){display:none}
-  .hero{padding:32px 14px 24px}
-  .hero h1{font-size:22px}
-  .hero p{font-size:13px}
-  .upload-zone{padding:36px 16px;border-radius:12px}
-  .upload-zone h2{font-size:16px}
-  .upload-icon{width:56px;height:56px;font-size:24px}
-  .analyze-btn{padding:9px 14px;font-size:12px}
-  .risk-banner{flex-direction:column;text-align:center;gap:14px;padding:18px}
-  .risk-gauge{width:70px;height:70px}
-  .risk-gauge-val{font-size:17px}
-  .risk-info h3{font-size:15px}
-  .download-bar{flex-direction:column}
-  .dl-btn{min-width:unset}
-  .progress-card{padding:16px}
-  .pipe-item{padding:9px 10px}
-  .pipe-item-label{font-size:11px}
-  .progress-header{gap:10px}
-  .info-table .label{width:110px;font-size:10px}
-  .info-table .value{font-size:11px}
-  pre.json-pre{font-size:10px;max-height:280px}
-  .card-head{padding:12px 14px}
-  .card-body{padding:0 14px 14px}
-}
+    @media(max-width:480px) {
+      .header {
+        padding: 0 12px;
+        height: 52px
+      }
 
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
-}
-</style>
+      .logo-text {
+        font-size: 14px
+      }
+
+      .logo-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+        border-radius: 8px
+      }
+
+      .ctrl-btn {
+        height: 30px;
+        padding: 0 9px;
+        font-size: 11px
+      }
+
+      .ctrl-btn span:not(.icon-light):not(.icon-dark) {
+        display: none
+      }
+
+      .hero {
+        padding: 32px 14px 24px
+      }
+
+      .hero h1 {
+        font-size: 22px
+      }
+
+      .hero p {
+        font-size: 13px
+      }
+
+      .upload-zone {
+        padding: 36px 16px;
+        border-radius: 12px
+      }
+
+      .upload-zone h2 {
+        font-size: 16px
+      }
+
+      .upload-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px
+      }
+
+      .analyze-btn {
+        padding: 9px 14px;
+        font-size: 12px
+      }
+
+      .risk-banner {
+        flex-direction: column;
+        text-align: center;
+        gap: 14px;
+        padding: 18px
+      }
+
+      .risk-gauge {
+        width: 70px;
+        height: 70px
+      }
+
+      .risk-gauge-val {
+        font-size: 17px
+      }
+
+      .risk-info h3 {
+        font-size: 15px
+      }
+
+      .download-bar {
+        flex-direction: column
+      }
+
+      .dl-btn {
+        min-width: unset
+      }
+
+      .progress-card {
+        padding: 16px
+      }
+
+      .pipe-item {
+        padding: 9px 10px
+      }
+
+      .pipe-item-label {
+        font-size: 11px
+      }
+
+      .progress-header {
+        gap: 10px
+      }
+
+      .info-table .label {
+        width: 110px;
+        font-size: 10px
+      }
+
+      .info-table .value {
+        font-size: 11px
+      }
+
+      pre.json-pre {
+        font-size: 10px;
+        max-height: 280px
+      }
+
+      .card-head {
+        padding: 12px 14px
+      }
+
+      .card-body {
+        padding: 0 14px 14px
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<!-- ═══ HEADER ═══════════════════════════════ -->
-<header class="header">
-  <a href="/" class="logo" aria-label="Malware Analyzer">
-    <div class="logo-icon">🛡</div>
-    <span class="logo-text">Malware Analyzer<span class="logo-sub">v1.0</span></span>
-  </a>
+  <!-- ═══ HEADER ═══════════════════════════════ -->
+  <header class="header">
+    <a href="/" class="logo" aria-label="Malware Analyzer">
+      <div class="logo-icon">🛡</div>
+      <span class="logo-text">Malware Analyzer<span class="logo-sub">v1.0</span></span>
+    </a>
 
-  <div class="header-right">
-    <!-- Server status -->
-    <div class="header-status" id="healthStatus" aria-live="polite">
-      <span class="status-dot"></span>
-      <span id="statusLabel" data-vi="Đang kiểm tra..." data-en="Checking..." data-zh="检查中...">Đang kiểm tra...</span>
+    <div class="header-right">
+      <!-- Server status -->
+      <div class="header-status" id="healthStatus" aria-live="polite">
+        <span class="status-dot"></span>
+        <span id="statusLabel" data-vi="Đang kiểm tra..." data-en="Checking..." data-zh="检查中...">Đang kiểm tra...</span>
+      </div>
+
+      <!-- Language toggle -->
+      <select class="ctrl-btn lang-select" id="langSelect" onchange="applyLang(this.value)" aria-label="Chọn ngôn ngữ"
+        title="Switch language">
+        <option value="vi">🇻🇳 VI</option>
+        <option value="en">🇬🇧 EN</option>
+        <option value="zh">🇨🇳 ZH</option>
+      </select>
+
+      <!-- Dark mode toggle -->
+      <button class="ctrl-btn theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Chuyển giao diện"
+        title="Toggle theme">
+        <span class="icon-light">🌙</span>
+        <span class="icon-dark">☀️</span>
+      </button>
     </div>
+  </header>
 
-    <!-- Language toggle -->
-    <select class="ctrl-btn lang-select" id="langSelect" onchange="applyLang(this.value)" aria-label="Chọn ngôn ngữ" title="Switch language">
-      <option value="vi">🇻🇳 VI</option>
-      <option value="en">🇬🇧 EN</option>
-      <option value="zh">🇨🇳 ZH</option>
-    </select>
+  <!-- ═══ HERO ══════════════════════════════════ -->
+  <section class="hero">
+    <div class="hero-badge" id="heroBadge">🔍 Phân tích mã độc tĩnh</div>
+    <h1 id="heroTitle">Phân Tích Mã Độc<br>Toàn Diện &amp; Tức Thì</h1>
+    <p id="heroDesc">Tải file lên để nhận báo cáo phân tích đầy đủ — cấu trúc PE, YARA, entropy, IoC, MITRE ATT&amp;CK
+      và điểm rủi ro.</p>
 
-    <!-- Dark mode toggle -->
-    <button class="ctrl-btn theme-btn" id="themeBtn" onclick="toggleTheme()" aria-label="Chuyển giao diện" title="Toggle theme">
-      <span class="icon-light">🌙</span>
-      <span class="icon-dark">☀️</span>
-    </button>
-  </div>
-</header>
-
-<!-- ═══ HERO ══════════════════════════════════ -->
-<section class="hero">
-  <div class="hero-badge" id="heroBadge">🔍 Phân tích mã độc tĩnh</div>
-  <h1 id="heroTitle">Phân Tích Mã Độc<br>Toàn Diện &amp; Tức Thì</h1>
-  <p id="heroDesc">Tải file lên để nhận báo cáo phân tích đầy đủ — cấu trúc PE, YARA, entropy, IoC, MITRE ATT&amp;CK và điểm rủi ro.</p>
-
-  <!-- Pipeline -->
-  <div class="pipeline" aria-label="Các bước phân tích" id="heroPipeline">
-    <div class="pipe-step"><span class="pipe-dot"></span>Hash</div>
-    <span class="pipe-arrow">→</span>
-    <div class="pipe-step"><span class="pipe-dot"></span>Entropy</div>
-    <span class="pipe-arrow">→</span>
-    <div class="pipe-step"><span class="pipe-dot"></span>PE Analysis</div>
-    <span class="pipe-arrow">→</span>
-    <div class="pipe-step"><span class="pipe-dot"></span>Strings &amp; IoC</div>
-    <span class="pipe-arrow">→</span>
-    <div class="pipe-step"><span class="pipe-dot"></span>YARA</div>
-    <span class="pipe-arrow">→</span>
-    <div class="pipe-step"><span class="pipe-dot"></span>VirusTotal</div>
-    <span class="pipe-arrow">→</span>
-    <div class="pipe-step"><span class="pipe-dot"></span>MITRE ATT&amp;CK</div>
-    <span class="pipe-arrow">→</span>
-    <div class="pipe-step"><span class="pipe-dot"></span>Risk Score</div>
-  </div>
-</section>
-
-<!-- ═══ MAIN ═══════════════════════════════════ -->
-<main class="main">
-  <div class="container">
-
-    <!-- Upload Zone -->
-    <section id="uploadSection">
-      <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Tải file lên">
-        <div class="upload-icon" aria-hidden="true">🛡️</div>
-        <h2 id="uploadTitle">Kéo thả file vào đây</h2>
-        <p id="uploadDesc">hoặc <span class="browse-link" id="browseLink">chọn file</span> từ máy tính — tối đa 32 MB</p>
-        <div class="upload-exts">
-          <span class="ext-badge">.exe</span><span class="ext-badge">.dll</span>
-          <span class="ext-badge">.pdf</span><span class="ext-badge">.docx</span>
-          <span class="ext-badge">.xlsx</span><span class="ext-badge">.zip</span>
-          <span class="ext-badge">.py</span><span class="ext-badge">.ps1</span>
-          <span class="ext-badge">.apk</span><span class="ext-badge">.elf</span>
-          <span class="ext-badge">.bin</span>
-        </div>
-      </div>
-      <input type="file" id="fileInput" aria-hidden="true">
-
-      <div class="file-preview" id="filePreview">
-        <span class="file-preview-icon" aria-hidden="true">📄</span>
-        <div class="file-preview-info">
-          <div class="file-preview-name" id="fileName">—</div>
-          <div class="file-preview-size" id="fileSize">—</div>
-        </div>
-        <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()">
-          <span id="analyzeBtnLabel">Phân tích →</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Progress -->
-    <section class="progress-section" id="progressSection" aria-live="polite">
-      <div class="progress-card">
-        <div class="progress-header">
-          <div class="progress-spinner" aria-hidden="true"></div>
-          <div>
-            <div class="progress-title" id="progressTitle">Đang phân tích file...</div>
-            <div class="progress-sub" id="progressSub">Có thể mất vài giây tuỳ kích thước file.</div>
-          </div>
-        </div>
-        <div class="pipeline-track" id="pipelineTrack">
-          <div class="pipe-item" data-step="hash">
-            <div class="pipe-item-icon">🔑</div>
-            <div class="pipe-item-label" data-vi="Tính toán Hash (MD5, SHA1, SHA256, SHA512)" data-en="Hash computation (MD5, SHA1, SHA256, SHA512)" data-zh="计算哈希 (MD5, SHA1, SHA256, SHA512)">Tính toán Hash (MD5, SHA1, SHA256, SHA512)</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
-          </div>
-          <div class="pipe-item" data-step="entropy">
-            <div class="pipe-item-icon">📊</div>
-            <div class="pipe-item-label" data-vi="Phân tích Entropy — phát hiện packer / mã hóa" data-en="Entropy analysis — detect packer / encryption" data-zh="熵分析 — 检测加壳 / 加密">Phân tích Entropy — phát hiện packer / mã hóa</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
-          </div>
-          <div class="pipe-item" data-step="pe">
-            <div class="pipe-item-icon">⚙️</div>
-            <div class="pipe-item-label" data-vi="Phân tích cấu trúc PE — headers, sections, imports" data-en="PE structure — headers, sections, imports" data-zh="PE 结构分析 — headers, sections, imports">Phân tích cấu trúc PE — headers, sections, imports</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
-          </div>
-          <div class="pipe-item" data-step="strings">
-            <div class="pipe-item-icon">🔍</div>
-            <div class="pipe-item-label" data-vi="Trích xuất chuỗi & quét IoC (URL, IP, domain...)" data-en="String extraction & IoC scan (URL, IP, domain...)" data-zh="字符串提取 & IoC 扫描 (URL, IP, 域名...)">Trích xuất chuỗi &amp; quét IoC (URL, IP, domain...)</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
-          </div>
-          <div class="pipe-item" data-step="yara">
-            <div class="pipe-item-icon">🎯</div>
-            <div class="pipe-item-label" data-vi="Quét YARA rules — so khớp chữ ký mã độc" data-en="YARA rules scan — malware signature matching" data-zh="YARA 规则扫描 — 匹配恶意软件签名">Quét YARA rules — so khớp chữ ký mã độc</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
-          </div>
-          <div class="pipe-item" data-step="vt">
-            <div class="pipe-item-icon">🛡️</div>
-            <div class="pipe-item-label" data-vi="Tra cứu VirusTotal — kiểm tra SHA256" data-en="VirusTotal lookup — SHA256 check" data-zh="VirusTotal 查询 — SHA256 检查">Tra cứu VirusTotal — kiểm tra SHA256</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
-          </div>
-          <div class="pipe-item" data-step="office">
-            <div class="pipe-item-icon">📝</div>
-            <div class="pipe-item-label" data-vi="Phân tích Office/PDF — VBA macro, JavaScript nhúng" data-en="Office/PDF analysis — VBA macro, embedded JS" data-zh="Office/PDF 分析 — VBA 宏, 嵌入式 JS">Phân tích Office/PDF — VBA macro, JavaScript nhúng</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
-          </div>
-          <div class="pipe-item" data-step="mitre">
-            <div class="pipe-item-icon">🗺️</div>
-            <div class="pipe-item-label" data-vi="Ánh xạ MITRE ATT&CK — kỹ thuật tấn công" data-en="MITRE ATT&CK mapping — attack techniques" data-zh="MITRE ATT&CK 映射 — 攻击技术">Ánh xạ MITRE ATT&amp;CK — kỹ thuật tấn công</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
-          </div>
-          <div class="pipe-item" data-step="risk">
-            <div class="pipe-item-icon">⚠️</div>
-            <div class="pipe-item-label" data-vi="Tính điểm rủi ro tổng hợp (0–100)" data-en="Composite risk scoring (0–100)" data-zh="综合风险评分 (0–100)">Tính điểm rủi ro tổng hợp (0–100)</div>
-            <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..." data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong" data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Error -->
-    <div class="error-card" id="errorCard" role="alert">
-      <h3 id="errorTitle">⚠ Phân tích thất bại</h3>
-      <p id="errorMessage">Đã xảy ra lỗi không xác định.</p>
+    <!-- Pipeline -->
+    <div class="pipeline" aria-label="Các bước phân tích" id="heroPipeline">
+      <div class="pipe-step"><span class="pipe-dot"></span>Hash</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-step"><span class="pipe-dot"></span>Entropy</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-step"><span class="pipe-dot"></span>PE Analysis</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-step"><span class="pipe-dot"></span>Deep Static</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-step"><span class="pipe-dot"></span>Strings &amp; IoC</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-step"><span class="pipe-dot"></span>YARA</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-step"><span class="pipe-dot"></span>MITRE ATT&amp;CK</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-step"><span class="pipe-dot"></span>Risk Score</div>
     </div>
+  </section>
 
-    <!-- Results -->
-    <section class="results-section" id="resultsSection" aria-label="Kết quả phân tích"></section>
+  <!-- ═══ MAIN ═══════════════════════════════════ -->
+  <main class="main">
+    <div class="container">
 
-  </div>
-</main>
+      <!-- Upload Zone -->
+      <section id="uploadSection">
+        <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Tải file lên">
+          <div class="upload-icon" aria-hidden="true">🛡️</div>
+          <h2 id="uploadTitle">Kéo thả file vào đây</h2>
+          <p id="uploadDesc">hoặc <span class="browse-link" id="browseLink">chọn file</span> từ máy tính — tối đa 32 MB
+          </p>
+          <div class="upload-exts">
+            <span class="ext-badge">.exe</span><span class="ext-badge">.dll</span>
+            <span class="ext-badge">.pdf</span><span class="ext-badge">.docx</span>
+            <span class="ext-badge">.xlsx</span><span class="ext-badge">.zip</span>
+            <span class="ext-badge">.py</span><span class="ext-badge">.ps1</span>
+            <span class="ext-badge">.apk</span><span class="ext-badge">.elf</span>
+            <span class="ext-badge">.bin</span>
+          </div>
+        </div>
+        <input type="file" id="fileInput" aria-hidden="true">
 
-<!-- ═══ FOOTER ═══════════════════════════════ -->
-<footer class="footer">
-  <span id="footerText">🛡 Malware Analyzer · Phân tích thực hiện phía máy chủ · File bị xóa ngay sau khi phân tích</span>
-</footer>
+        <div class="file-preview" id="filePreview">
+          <span class="file-preview-icon" aria-hidden="true">📄</span>
+          <div class="file-preview-info">
+            <div class="file-preview-name" id="fileName">—</div>
+            <div class="file-preview-size" id="fileSize">—</div>
+          </div>
+          <button class="analyze-btn" id="analyzeBtn" onclick="startAnalysis()">
+            <span id="analyzeBtnLabel">Phân tích →</span>
+          </button>
+        </div>
+      </section>
 
-<script>
-(() => {
-'use strict';
+      <!-- Progress -->
+      <section class="progress-section" id="progressSection" aria-live="polite">
+        <div class="progress-card">
+          <div class="progress-header">
+            <div class="progress-spinner" aria-hidden="true"></div>
+            <div>
+              <div class="progress-title" id="progressTitle">Đang phân tích file...</div>
+              <div class="progress-sub" id="progressSub">Có thể mất vài giây tuỳ kích thước file.</div>
+            </div>
+          </div>
+          <div class="pipeline-track" id="pipelineTrack">
+            <div class="pipe-item" data-step="hash">
+              <div class="pipe-item-icon">🔑</div>
+              <div class="pipe-item-label" data-vi="Tính toán Hash (MD5, SHA1, SHA256, SHA512)"
+                data-en="Hash computation (MD5, SHA1, SHA256, SHA512)" data-zh="计算哈希 (MD5, SHA1, SHA256, SHA512)">Tính
+                toán Hash (MD5, SHA1, SHA256, SHA512)</div>
+              <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..."
+                data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong"
+                data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
+            </div>
+            <div class="pipe-item" data-step="entropy">
+              <div class="pipe-item-icon">📊</div>
+              <div class="pipe-item-label" data-vi="Phân tích Entropy — phát hiện packer / mã hóa"
+                data-en="Entropy analysis — detect packer / encryption" data-zh="熵分析 — 检测加壳 / 加密">Phân tích Entropy —
+                phát hiện packer / mã hóa</div>
+              <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..."
+                data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong"
+                data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
+            </div>
+            <div class="pipe-item" data-step="pe">
+              <div class="pipe-item-icon">⚙️</div>
+              <div class="pipe-item-label" data-vi="Phân tích cấu trúc PE — headers, sections, imports"
+                data-en="PE structure — headers, sections, imports" data-zh="PE 结构分析 — headers, sections, imports">Phân
+                tích cấu trúc PE — headers, sections, imports</div>
+              <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..."
+                data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong"
+                data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
+            </div>
+            <div class="pipe-item" data-step="deep">
+              <div class="pipe-item-icon">🧠</div>
+              <div class="pipe-item-label" data-vi="Phân tích tĩnh chuyên sâu — Disassembly, Crypto, Obfuscation"
+                data-en="Deep static analysis — Disassembly, Crypto, Obfuscation" data-zh="深度静态分析 — 反汇编，加密，混淆">Phân tích
+                tĩnh chuyên sâu — Disassembly, Crypto, Obfuscation</div>
+              <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..."
+                data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong"
+                data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
+            </div>
+            <div class="pipe-item" data-step="strings">
+              <div class="pipe-item-icon">🔍</div>
+              <div class="pipe-item-label" data-vi="Trích xuất chuỗi & quét IoC (URL, IP, domain...)"
+                data-en="String extraction & IoC scan (URL, IP, domain...)" data-zh="字符串提取 & IoC 扫描 (URL, IP, 域名...)">
+                Trích xuất chuỗi &amp; quét IoC (URL, IP, domain...)</div>
+              <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..."
+                data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong"
+                data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
+            </div>
+            <div class="pipe-item" data-step="yara">
+              <div class="pipe-item-icon">🎯</div>
+              <div class="pipe-item-label" data-vi="Quét YARA rules — so khớp chữ ký mã độc"
+                data-en="YARA rules scan — malware signature matching" data-zh="YARA 规则扫描 — 匹配恶意软件签名">Quét YARA rules —
+                so khớp chữ ký mã độc</div>
+              <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..."
+                data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong"
+                data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
+            </div>
 
-/* ═══ i18n ════════════════════════════════════════════ */
-const T = {
-  vi: {
-    heroBadge:     '🔍 Phân tích mã độc tĩnh',
-    heroTitle:     'Phân Tích Mã Độc<br>Toàn Diện &amp; Tức Thì',
-    heroDesc:      'Tải file lên để nhận báo cáo phân tích đầy đủ — cấu trúc PE, YARA, entropy, IoC, MITRE ATT&amp;CK và điểm rủi ro.',
-    uploadTitle:   'Kéo thả file vào đây',
-    uploadDesc:    'hoặc <span class="browse-link" id="browseLink">chọn file</span> từ máy tính — tối đa 32 MB',
-    analyzeBtn:    'Phân tích →',
-    progressTitle: 'Đang phân tích file...',
-    progressSub:   'Có thể mất vài giây tuỳ kích thước file.',
-    errorTitle:    '⚠ Phân tích thất bại',
-    statusOnline:  'Trực tuyến',
-    statusOffline: 'Ngoại tuyến',
-    statusCheck:   'Đang kiểm tra...',
-    footer:        '🛡 Malware Analyzer · Phân tích thực hiện phía máy chủ · File bị xóa ngay sau khi phân tích',
-    /* result sections */
-    riskTitle:     'Đánh giá Rủi ro',
-    fileInfo:      'Thông tin File',
-    entropyTitle:  'Phân tích Entropy',
-    peTitle:       'Phân tích PE',
-    stringsTitle:  'Chuỗi &amp; IoC',
-    yaraTitle:     'YARA',
-    vtTitle:       'VirusTotal',
-    mitreTitle:    'MITRE ATT&amp;CK',
-    riskFactors:   'Yếu tố Rủi ro',
-    analysisWarn:  'Cảnh báo phân tích',
-    rawJson:       'Báo cáo JSON thô',
-    dlHtml:        '📄 Tải báo cáo HTML',
-    dlJson:        '📁 Tải báo cáo JSON',
-    dlStix:        '🔒 Xuất STIX 2.1 Bundle',
-    newAnalysis:   '↺ Phân tích file mới',
-    copyBtn:       'Sao chép',
-    copied:        'Đã sao chép!',
-    copyJson:      'Sao chép JSON',
-    copiedJson:    'Đã sao chép!',
-    networkErr:    'Lỗi kết nối mạng — không thể liên hệ máy chủ.',
-    sections:      'Sections',
-    susImports:    'Suspicious Imports',
-    filename:      'Tên file',
-    filetype:      'Loại file',
-    filesize:      'Kích thước',
-    overall:       'Tổng thể',
-    stats:         'Thống kê',
-    arch:          'Kiến trúc',
-    compileTime:   'Thời gian biên dịch',
-    entryPoint:    'Entry Point',
-    impHash:       'Import Hash',
-    detections:    'Phát hiện',
-    scanDate:      'Ngày quét',
-    report:        'Báo cáo',
-    vtLink:        'Xem trên VirusTotal ↗',
-    riskSummary:   'Điểm',
-    entVerdict:    ['Bình thường','Entropy cao vừa','Có thể bị packer/mã hóa'],
-    more:          'nữa',
-    iocLabels:     {urls:'URLs',ipv4:'Địa chỉ IPv4',emails:'Email',domains:'Tên miền',registry_keys:'Registry Keys',file_paths:'Đường dẫn File'},
-    pageTitle:     'Malware Analyzer — Nền tảng phân tích mã độc tĩnh',
-  },
-  en: {
-    heroBadge:     '🔍 Static Malware Analysis',
-    heroTitle:     'Comprehensive Malware<br>Analysis &amp; Threat Intel',
-    heroDesc:      'Upload a suspicious file for a full analysis report — PE structure, YARA, entropy, IoC, MITRE ATT&amp;CK mapping and risk scoring.',
-    uploadTitle:   'Drop your file here',
-    uploadDesc:    'or <span class="browse-link" id="browseLink">browse</span> to select — max 32 MB',
-    analyzeBtn:    'Analyze →',
-    progressTitle: 'Analyzing file...',
-    progressSub:   'This may take a few seconds depending on file size.',
-    errorTitle:    '⚠ Analysis Failed',
-    statusOnline:  'Online',
-    statusOffline: 'Offline',
-    statusCheck:   'Checking...',
-    footer:        '🛡 Malware Analyzer · All analysis is server-side · Files are deleted after analysis',
-    riskTitle:     'Risk Assessment',
-    fileInfo:      'File Information',
-    entropyTitle:  'Entropy Analysis',
-    peTitle:       'PE Analysis',
-    stringsTitle:  'Strings &amp; IoCs',
-    yaraTitle:     'YARA',
-    vtTitle:       'VirusTotal',
-    mitreTitle:    'MITRE ATT&amp;CK',
-    riskFactors:   'Risk Factors',
-    analysisWarn:  'Analysis Warnings',
-    rawJson:       'Raw JSON Report',
-    dlHtml:        '📄 Download HTML Report',
-    dlJson:        '📁 Download JSON Report',
-    dlStix:        '🔒 Export STIX 2.1 Bundle',
-    newAnalysis:   '↺ New Analysis',
-    copyBtn:       'Copy',
-    copied:        'Copied!',
-    copyJson:      'Copy JSON',
-    copiedJson:    'Copied!',
-    networkErr:    'Network error — could not reach the server.',
-    sections:      'Sections',
-    susImports:    'Suspicious Imports',
-    filename:      'Filename',
-    filetype:      'File Type',
-    filesize:      'Size',
-    overall:       'Overall',
-    stats:         'Stats',
-    arch:          'Architecture',
-    compileTime:   'Compile Time',
-    entryPoint:    'Entry Point',
-    impHash:       'Import Hash',
-    detections:    'Detections',
-    scanDate:      'Scan Date',
-    report:        'Report',
-    vtLink:        'View on VirusTotal ↗',
-    riskSummary:   'Score',
-    entVerdict:    ['Normal','Moderately high','Likely packed/encrypted'],
-    more:          'more',
-    iocLabels:     {urls:'URLs',ipv4:'IPv4 Addresses',emails:'Emails',domains:'Domains',registry_keys:'Registry Keys',file_paths:'File Paths'},
-    pageTitle:     'Malware Analyzer — Static Analysis Platform',
-  },
-  zh: {
-    heroBadge:     '🔍 静态恶意软件分析',
-    heroTitle:     '全面的恶意软件<br>分析与威胁情报',
-    heroDesc:      '上传可疑文件获取完整分析报告 — PE 结构, YARA, 熵, IoC, MITRE ATT&amp;CK 映射和风险评分。',
-    uploadTitle:   '将文件拖放到此处',
-    uploadDesc:    '或 <span class="browse-link" id="browseLink">浏览文件</span> — 最大 32 MB',
-    analyzeBtn:    '分析 →',
-    progressTitle: '正在分析文件...',
-    progressSub:   '根据文件大小可能需要几秒钟。',
-    errorTitle:    '⚠ 分析失败',
-    statusOnline:  '在线',
-    statusOffline: '离线',
-    statusCheck:   '检查中...',
-    footer:        '🛡 恶意软件分析器 · 所有分析在服务器端进行 · 文件分析后即被删除',
-    riskTitle:     '风险评估',
-    fileInfo:      '文件信息',
-    entropyTitle:  '熵分析',
-    peTitle:       'PE 分析',
-    stringsTitle:  '字符串 &amp; IoCs',
-    yaraTitle:     'YARA',
-    vtTitle:       'VirusTotal',
-    mitreTitle:    'MITRE ATT&amp;CK',
-    riskFactors:   '风险因素',
-    analysisWarn:  '分析警告',
-    rawJson:       '原始 JSON 报告',
-    dlHtml:        '📄 下载 HTML 报告',
-    dlJson:        '📁 下载 JSON 报告',
-    dlStix:        '🔒 导出 STIX 2.1 包',
-    newAnalysis:   '↺ 重新分析',
-    copyBtn:       '复制',
-    copied:        '已复制！',
-    copyJson:      '复制 JSON',
-    copiedJson:    '已复制！',
-    networkErr:    '网络错误 — 无法连接到服务器。',
-    sections:      '节区 (Sections)',
-    susImports:    '可疑导入 (Suspicious)',
-    filename:      '文件名',
-    filetype:      '文件类型',
-    filesize:      '大小',
-    overall:       '总体',
-    stats:         '统计',
-    arch:          '架构',
-    compileTime:   '编译时间',
-    entryPoint:    '入口点',
-    impHash:       'Import Hash',
-    detections:    '检测结果',
-    scanDate:      '扫描日期',
-    report:        '报告',
-    vtLink:        '在 VirusTotal 上查看 ↗',
-    riskSummary:   '评分',
-    entVerdict:    ['正常','中等偏高','可能是加壳/加密文件'],
-    more:          '更多',
-    iocLabels:     {urls:'URLs',ipv4:'IPv4 地址',emails:'电子邮件',domains:'域名',registry_keys:'注册表键',file_paths:'文件路径'},
-    pageTitle:     '恶意软件分析器 — 静态分析平台',
-  }
-};
+            <div class="pipe-item" data-step="office">
+              <div class="pipe-item-icon">📝</div>
+              <div class="pipe-item-label" data-vi="Phân tích Office/PDF — VBA macro, JavaScript nhúng"
+                data-en="Office/PDF analysis — VBA macro, embedded JS" data-zh="Office/PDF 分析 — VBA 宏, 嵌入式 JS">Phân tích
+                Office/PDF — VBA macro, JavaScript nhúng</div>
+              <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..."
+                data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong"
+                data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
+            </div>
+            <div class="pipe-item" data-step="mitre">
+              <div class="pipe-item-icon">🗺️</div>
+              <div class="pipe-item-label" data-vi="Ánh xạ MITRE ATT&CK — kỹ thuật tấn công"
+                data-en="MITRE ATT&CK mapping — attack techniques" data-zh="MITRE ATT&CK 映射 — 攻击技术">Ánh xạ MITRE
+                ATT&amp;CK — kỹ thuật tấn công</div>
+              <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..."
+                data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong"
+                data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
+            </div>
+            <div class="pipe-item" data-step="risk">
+              <div class="pipe-item-icon">⚠️</div>
+              <div class="pipe-item-label" data-vi="Tính điểm rủi ro tổng hợp (0–100)"
+                data-en="Composite risk scoring (0–100)" data-zh="综合风险评分 (0–100)">Tính điểm rủi ro tổng hợp (0–100)
+              </div>
+              <div class="pipe-item-status" data-vi-idle="Chờ..." data-en-idle="Waiting..." data-zh-idle="等待..."
+                data-vi-run="Đang xử lý..." data-en-run="Processing..." data-zh-run="处理中..." data-vi-done="✓ Xong"
+                data-en-done="✓ Done" data-zh-done="✓ 完成">Chờ...</div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-/* ═══ State ═══════════════════════════════════════════ */
-let lang  = localStorage.getItem('ma-lang')  || 'vi';
-let theme = localStorage.getItem('ma-theme') || 'light';
-let selectedFile = null;
-let lastData = null;
+      <!-- Error -->
+      <div class="error-card" id="errorCard" role="alert">
+        <h3 id="errorTitle">⚠ Phân tích thất bại</h3>
+        <p id="errorMessage">Đã xảy ra lỗi không xác định.</p>
+      </div>
 
-/* ═══ DOM refs ════════════════════════════════════════ */
-const $ = id => document.getElementById(id);
-const uploadZone    = $('uploadZone');
-const fileInput     = $('fileInput');
-const progressEl    = $('progressSection');
-const errorCard     = $('errorCard');
-const errorMsg      = $('errorMessage');
-const resultsEl     = $('resultsSection');
-const filePreview   = $('filePreview');
-const fileNameEl    = $('fileName');
-const fileSizeEl    = $('fileSize');
-const analyzeBtn    = $('analyzeBtn');
+      <!-- Results -->
+      <section class="results-section" id="resultsSection" aria-label="Kết quả phân tích"></section>
 
-/* ═══ Helpers ═════════════════════════════════════════ */
-function t(key) { return T[lang][key] ?? T.vi[key] ?? key; }
-function fmtBytes(b) {
-  if (!b) return '0 B';
-  const u = ['B','KB','MB','GB'];
-  const i = Math.floor(Math.log(b)/Math.log(1024));
-  return (b/Math.pow(1024,i)).toFixed(i?1:0)+' '+u[i];
-}
-function esc(s) {
-  const d = document.createElement('div');
-  d.textContent = String(s??'');
-  return d.innerHTML;
-}
+    </div>
+  </main>
 
-/* ═══ Theme ═══════════════════════════════════════════ */
-function applyTheme(th) {
-  theme = th;
-  document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('ma-theme', theme);
-}
-window.toggleTheme = () => applyTheme(theme === 'light' ? 'dark' : 'light');
+  <!-- ═══ FOOTER ═══════════════════════════════ -->
+  <footer class="footer">
+    <span id="footerText">🛡 Malware Analyzer · Phân tích thực hiện phía máy chủ · File bị xóa ngay sau khi phân
+      tích</span>
+  </footer>
 
-/* ═══ Language ════════════════════════════════════════ */
-function applyLang(l) {
-  lang = l;
-  document.documentElement.setAttribute('data-lang', lang);
-  document.documentElement.lang = lang;
-  localStorage.setItem('ma-lang', lang);
+  <script>
+    (() => {
+      'use strict';
 
-  const langSel = $('langSelect');
-  if (langSel && langSel.value !== lang) langSel.value = lang;
+      /* ═══ i18n ════════════════════════════════════════════ */
+      const T = {
+        vi: {
+          heroBadge: '🔍 Phân tích mã độc tĩnh',
+          heroTitle: 'Phân Tích Mã Độc<br>Toàn Diện &amp; Tức Thì',
+          heroDesc: 'Tải file lên để nhận báo cáo phân tích đầy đủ — cấu trúc PE, YARA, entropy, IoC, MITRE ATT&amp;CK và điểm rủi ro.',
+          uploadTitle: 'Kéo thả file vào đây',
+          uploadDesc: 'hoặc <span class="browse-link" id="browseLink">chọn file</span> từ máy tính — tối đa 32 MB',
+          analyzeBtn: 'Phân tích →',
+          progressTitle: 'Đang phân tích file...',
+          progressSub: 'Có thể mất vài giây tuỳ kích thước file.',
+          errorTitle: '⚠ Phân tích thất bại',
+          statusOnline: 'Trực tuyến',
+          statusOffline: 'Ngoại tuyến',
+          statusCheck: 'Đang kiểm tra...',
+          footer: '🛡 Malware Analyzer · Phân tích thực hiện phía máy chủ · File bị xóa ngay sau khi phân tích',
+          /* result sections */
+          riskTitle: 'Đánh giá Rủi ro',
+          fileInfo: 'Thông tin File',
+          entropyTitle: 'Phân tích Entropy',
+          peTitle: 'Phân tích PE',
+          deepTitle: 'Phân tích tĩnh chuyên sâu',
+          stringsTitle: 'Chuỗi &amp; IoC',
+          yaraTitle: 'YARA',
+          vtTitle: 'VirusTotal',
+          mitreTitle: 'MITRE ATT&amp;CK',
+          riskFactors: 'Yếu tố Rủi ro',
+          analysisWarn: 'Cảnh báo phân tích',
+          rawJson: 'Báo cáo JSON thô',
+          dlHtml: '📄 Tải báo cáo HTML',
+          dlJson: '📁 Tải báo cáo JSON',
+          dlStix: '🔒 Xuất STIX 2.1 Bundle',
+          newAnalysis: '↺ Phân tích file mới',
+          copyBtn: 'Sao chép',
+          copied: 'Đã sao chép!',
+          copyJson: 'Sao chép JSON',
+          copiedJson: 'Đã sao chép!',
+          networkErr: 'Lỗi kết nối mạng — không thể liên hệ máy chủ.',
+          sections: 'Sections',
+          susImports: 'Suspicious Imports',
+          filename: 'Tên file',
+          filetype: 'Loại file',
+          filesize: 'Kích thước',
+          overall: 'Tổng thể',
+          stats: 'Thống kê',
+          arch: 'Kiến trúc',
+          compileTime: 'Thời gian biên dịch',
+          entryPoint: 'Entry Point',
+          impHash: 'Import Hash',
+          detections: 'Phát hiện',
+          scanDate: 'Ngày quét',
+          report: 'Báo cáo',
+          vtLink: 'Xem trên VirusTotal ↗',
+          riskSummary: 'Điểm',
+          entVerdict: ['Bình thường', 'Entropy cao vừa', 'Có thể bị packer/mã hóa'],
+          more: 'nữa',
+          iocLabels: { urls: 'URLs', ipv4: 'Địa chỉ IPv4', emails: 'Email', domains: 'Tên miền', registry_keys: 'Registry Keys', file_paths: 'Đường dẫn File' },
+          pageTitle: 'Malware Analyzer — Nền tảng phân tích mã độc tĩnh',
+        },
+        en: {
+          heroBadge: '🔍 Static Malware Analysis',
+          heroTitle: 'Comprehensive Malware<br>Analysis &amp; Threat Intel',
+          heroDesc: 'Upload a suspicious file for a full analysis report — PE structure, YARA, entropy, IoC, MITRE ATT&amp;CK mapping and risk scoring.',
+          uploadTitle: 'Drop your file here',
+          uploadDesc: 'or <span class="browse-link" id="browseLink">browse</span> to select — max 32 MB',
+          analyzeBtn: 'Analyze →',
+          progressTitle: 'Analyzing file...',
+          progressSub: 'This may take a few seconds depending on file size.',
+          errorTitle: '⚠ Analysis Failed',
+          statusOnline: 'Online',
+          statusOffline: 'Offline',
+          statusCheck: 'Checking...',
+          footer: '🛡 Malware Analyzer · All analysis is server-side · Files are deleted after analysis',
+          riskTitle: 'Risk Assessment',
+          fileInfo: 'File Information',
+          entropyTitle: 'Entropy Analysis',
+          peTitle: 'PE Analysis',
+          deepTitle: 'Deep Static Analysis',
+          stringsTitle: 'Strings &amp; IoCs',
+          yaraTitle: 'YARA',
+          vtTitle: 'VirusTotal',
+          mitreTitle: 'MITRE ATT&amp;CK',
+          riskFactors: 'Risk Factors',
+          analysisWarn: 'Analysis Warnings',
+          rawJson: 'Raw JSON Report',
+          dlHtml: '📄 Download HTML Report',
+          dlJson: '📁 Download JSON Report',
+          dlStix: '🔒 Export STIX 2.1 Bundle',
+          newAnalysis: '↺ New Analysis',
+          copyBtn: 'Copy',
+          copied: 'Copied!',
+          copyJson: 'Copy JSON',
+          copiedJson: 'Copied!',
+          networkErr: 'Network error — could not reach the server.',
+          sections: 'Sections',
+          susImports: 'Suspicious Imports',
+          filename: 'Filename',
+          filetype: 'File Type',
+          filesize: 'Size',
+          overall: 'Overall',
+          stats: 'Stats',
+          arch: 'Architecture',
+          compileTime: 'Compile Time',
+          entryPoint: 'Entry Point',
+          impHash: 'Import Hash',
+          detections: 'Detections',
+          scanDate: 'Scan Date',
+          report: 'Report',
+          vtLink: 'View on VirusTotal ↗',
+          riskSummary: 'Score',
+          entVerdict: ['Normal', 'Moderately high', 'Likely packed/encrypted'],
+          more: 'more',
+          iocLabels: { urls: 'URLs', ipv4: 'IPv4 Addresses', emails: 'Emails', domains: 'Domains', registry_keys: 'Registry Keys', file_paths: 'File Paths' },
+          pageTitle: 'Malware Analyzer — Static Analysis Platform',
+        },
+        zh: {
+          heroBadge: '🔍 静态恶意软件分析',
+          heroTitle: '全面的恶意软件<br>分析与威胁情报',
+          heroDesc: '上传可疑文件获取完整分析报告 — PE 结构, YARA, 熵, IoC, MITRE ATT&amp;CK 映射和风险评分。',
+          uploadTitle: '将文件拖放到此处',
+          uploadDesc: '或 <span class="browse-link" id="browseLink">浏览文件</span> — 最大 32 MB',
+          analyzeBtn: '分析 →',
+          progressTitle: '正在分析文件...',
+          progressSub: '根据文件大小可能需要几秒钟。',
+          errorTitle: '⚠ 分析失败',
+          statusOnline: '在线',
+          statusOffline: '离线',
+          statusCheck: '检查中...',
+          footer: '🛡 恶意软件分析器 · 所有分析在服务器端进行 · 文件分析后即被删除',
+          riskTitle: '风险评估',
+          fileInfo: '文件信息',
+          entropyTitle: '熵分析',
+          peTitle: 'PE 分析',
+          deepTitle: '深度静态分析',
+          stringsTitle: '字符串 &amp; IoCs',
+          yaraTitle: 'YARA',
+          vtTitle: 'VirusTotal',
+          mitreTitle: 'MITRE ATT&amp;CK',
+          riskFactors: '风险因素',
+          analysisWarn: '分析警告',
+          rawJson: '原始 JSON 报告',
+          dlHtml: '📄 下载 HTML 报告',
+          dlJson: '📁 下载 JSON 报告',
+          dlStix: '🔒 导出 STIX 2.1 包',
+          newAnalysis: '↺ 重新分析',
+          copyBtn: '复制',
+          copied: '已复制！',
+          copyJson: '复制 JSON',
+          copiedJson: '已复制！',
+          networkErr: '网络错误 — 无法连接到服务器。',
+          sections: '节区 (Sections)',
+          susImports: '可疑导入 (Suspicious)',
+          filename: '文件名',
+          filetype: '文件类型',
+          filesize: '大小',
+          overall: '总体',
+          stats: '统计',
+          arch: '架构',
+          compileTime: '编译时间',
+          entryPoint: '入口点',
+          impHash: 'Import Hash',
+          detections: '检测结果',
+          scanDate: '扫描日期',
+          report: '报告',
+          vtLink: '在 VirusTotal 上查看 ↗',
+          riskSummary: '评分',
+          entVerdict: ['正常', '中等偏高', '可能是加壳/加密文件'],
+          more: '更多',
+          iocLabels: { urls: 'URLs', ipv4: 'IPv4 地址', emails: '电子邮件', domains: '域名', registry_keys: '注册表键', file_paths: '文件路径' },
+          pageTitle: '恶意软件分析器 — 静态分析平台',
+        }
+      };
 
-  document.title = t('pageTitle');
-  $('heroBadge').textContent  = t('heroBadge').replace(/&amp;/g,'&');
-  $('heroTitle').innerHTML    = t('heroTitle');
-  $('heroDesc').innerHTML     = t('heroDesc');
-  $('uploadTitle').textContent = t('uploadTitle');
-  $('uploadDesc').innerHTML   = t('uploadDesc');
-  $('analyzeBtnLabel').textContent = t('analyzeBtn');
-  $('progressTitle').textContent   = t('progressTitle');
-  $('progressSub').textContent     = t('progressSub');
-  $('errorTitle').textContent      = t('errorTitle');
-  $('footerText').textContent      = t('footer');
+      /* ═══ State ═══════════════════════════════════════════ */
+      let lang = localStorage.getItem('ma-lang') || 'vi';
+      let theme = localStorage.getItem('ma-theme') || 'light';
+      let selectedFile = null;
+      let lastData = null;
 
-  /* re-bind browse click after innerHTML swap */
-  const bl = $('browseLink');
-  if (bl) bl.addEventListener('click', () => fileInput.click());
+      /* ═══ DOM refs ════════════════════════════════════════ */
+      const $ = id => document.getElementById(id);
+      const uploadZone = $('uploadZone');
+      const fileInput = $('fileInput');
+      const progressEl = $('progressSection');
+      const errorCard = $('errorCard');
+      const errorMsg = $('errorMessage');
+      const resultsEl = $('resultsSection');
+      const filePreview = $('filePreview');
+      const fileNameEl = $('fileName');
+      const fileSizeEl = $('fileSize');
+      const analyzeBtn = $('analyzeBtn');
 
-  /* status label */
-  const statusEl = $('statusLabel');
-  if (statusEl) {
-    const cur = statusEl.dataset.state;
-    if (cur === 'online')  statusEl.textContent = t('statusOnline');
-    else if (cur === 'offline') statusEl.textContent = t('statusOffline');
-    else statusEl.textContent = t('statusCheck');
-  }
+      /* ═══ Helpers ═════════════════════════════════════════ */
+      function t(key) { return T[lang][key] ?? T.vi[key] ?? key; }
+      function fmtBytes(b) {
+        if (!b) return '0 B';
+        const u = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(b) / Math.log(1024));
+        return (b / Math.pow(1024, i)).toFixed(i ? 1 : 0) + ' ' + u[i];
+      }
+      function esc(s) {
+        const d = document.createElement('div');
+        d.textContent = String(s ?? '');
+        return d.innerHTML;
+      }
 
-  /* pipeline labels */
-  document.querySelectorAll('.pipe-item-label[data-vi]').forEach(el => {
-    el.textContent = el.dataset[lang];
-  });
-  document.querySelectorAll('.pipe-item-status').forEach(el => {
-    const state = el.dataset.currentState || 'idle';
-    el.textContent = el.dataset[`${lang}-${state}`] || el.textContent;
-  });
+      /* ═══ Theme ═══════════════════════════════════════════ */
+      function applyTheme(th) {
+        theme = th;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('ma-theme', theme);
+      }
+      window.toggleTheme = () => applyTheme(theme === 'light' ? 'dark' : 'light');
 
-  /* if results already rendered, re-render */
-  if (lastData) renderResults(lastData);
-}
-window.applyLang = applyLang;
+      /* ═══ Language ════════════════════════════════════════ */
+      function applyLang(l) {
+        lang = l;
+        document.documentElement.setAttribute('data-lang', lang);
+        document.documentElement.lang = lang;
+        localStorage.setItem('ma-lang', lang);
 
-/* ═══ Drag & Drop ═════════════════════════════════════ */
-['dragenter','dragover','dragleave','drop'].forEach(ev => {
-  uploadZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); });
-});
-['dragenter','dragover'].forEach(ev =>
-  uploadZone.addEventListener(ev, () => uploadZone.classList.add('is-dragover'))
-);
-['dragleave','drop'].forEach(ev =>
-  uploadZone.addEventListener(ev, () => uploadZone.classList.remove('is-dragover'))
-);
-uploadZone.addEventListener('drop', e => {
-  if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-});
-uploadZone.addEventListener('click', () => fileInput.click());
-uploadZone.addEventListener('keydown', e => {
-  if (e.key === 'Enter' || e.key === ' ') fileInput.click();
-});
-fileInput.addEventListener('change', e => {
-  if (e.target.files.length) handleFile(e.target.files[0]);
-});
-const bl0 = $('browseLink');
-if (bl0) bl0.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
+        const langSel = $('langSelect');
+        if (langSel && langSel.value !== lang) langSel.value = lang;
 
-/* ═══ Handle file ══════════════════════════════════════ */
-function handleFile(file) {
-  selectedFile = file;
-  fileNameEl.textContent = file.name;
-  fileSizeEl.textContent = fmtBytes(file.size);
-  filePreview.classList.add('is-visible');
-}
+        document.title = t('pageTitle');
+        $('heroBadge').textContent = t('heroBadge').replace(/&amp;/g, '&');
+        $('heroTitle').innerHTML = t('heroTitle');
+        $('heroDesc').innerHTML = t('heroDesc');
+        $('uploadTitle').textContent = t('uploadTitle');
+        $('uploadDesc').innerHTML = t('uploadDesc');
+        $('analyzeBtnLabel').textContent = t('analyzeBtn');
+        $('progressTitle').textContent = t('progressTitle');
+        $('progressSub').textContent = t('progressSub');
+        $('errorTitle').textContent = t('errorTitle');
+        $('footerText').textContent = t('footer');
 
-/* ═══ Analyze ══════════════════════════════════════════ */
-window.startAnalysis = function() {
-  if (!selectedFile) return;
-  uploadFile(selectedFile);
-};
+        /* re-bind browse click after innerHTML swap */
+        const bl = $('browseLink');
+        if (bl) bl.addEventListener('click', () => fileInput.click());
 
-async function uploadFile(file) {
-  showProgress();
-  hideError();
-  resultsEl.classList.remove('is-visible');
-  resultsEl.innerHTML = '';
-  lastData = null;
-  if (analyzeBtn) analyzeBtn.disabled = true;
+        /* status label */
+        const statusEl = $('statusLabel');
+        if (statusEl) {
+          const cur = statusEl.dataset.state;
+          if (cur === 'online') statusEl.textContent = t('statusOnline');
+          else if (cur === 'offline') statusEl.textContent = t('statusOffline');
+          else statusEl.textContent = t('statusCheck');
+        }
 
-  const form = new FormData();
-  form.append('file', file);
+        /* pipeline labels */
+        document.querySelectorAll('.pipe-item-label[data-vi]').forEach(el => {
+          el.textContent = el.dataset[lang];
+        });
+        document.querySelectorAll('.pipe-item-status').forEach(el => {
+          const state = el.dataset.currentState || 'idle';
+          el.textContent = el.dataset[`${lang}-${state}`] || el.textContent;
+        });
 
-  const steps = ['hash','entropy','pe','strings','yara','vt','office','mitre','risk'];
-  let idx = 0;
-  const timer = setInterval(() => {
-    if (idx < steps.length) {
-      markStep(steps[idx], 'run');
-      if (idx > 0) markStep(steps[idx-1], 'done');
-      idx++;
-    }
-  }, 500);
+        /* if results already rendered, re-render */
+        if (lastData) renderResults(lastData);
+      }
+      window.applyLang = applyLang;
 
-  try {
-    const res  = await fetch('/analyze', { method:'POST', body:form });
-    clearInterval(timer);
-    steps.forEach(s => markStep(s,'done'));
-    const data = await res.json();
-    if (!res.ok) { showError(data.error || `HTTP ${res.status}`); return; }
-    lastData = data;
-    setTimeout(() => { hideProgress(); renderResults(data); }, 600);
-  } catch(err) {
-    clearInterval(timer);
-    showError(t('networkErr') + ' ' + err.message);
-  } finally {
-    if (analyzeBtn) analyzeBtn.disabled = false;
-  }
-}
+      /* ═══ Drag & Drop ═════════════════════════════════════ */
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+        uploadZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); });
+      });
+      ['dragenter', 'dragover'].forEach(ev =>
+        uploadZone.addEventListener(ev, () => uploadZone.classList.add('is-dragover'))
+      );
+      ['dragleave', 'drop'].forEach(ev =>
+        uploadZone.addEventListener(ev, () => uploadZone.classList.remove('is-dragover'))
+      );
+      uploadZone.addEventListener('drop', e => {
+        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+      });
+      uploadZone.addEventListener('click', () => fileInput.click());
+      uploadZone.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') fileInput.click();
+      });
+      fileInput.addEventListener('change', e => {
+        if (e.target.files.length) handleFile(e.target.files[0]);
+      });
+      const bl0 = $('browseLink');
+      if (bl0) bl0.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
 
-/* ═══ Progress ═════════════════════════════════════════ */
-function showProgress() { progressEl.classList.add('is-visible'); resetSteps(); }
-function hideProgress() { progressEl.classList.remove('is-visible'); }
-function resetSteps() {
-  document.querySelectorAll('.pipe-item').forEach(el => {
-    el.classList.remove('is-active','is-done');
-    const s = el.querySelector('.pipe-item-status');
-    s.dataset.currentState = 'idle';
-    s.textContent = s.dataset[`${lang}-idle`] || 'Chờ...';
-  });
-}
-function markStep(name, state) {
-  const el = document.querySelector(`.pipe-item[data-step="${name}"]`);
-  if (!el) return;
-  const s = el.querySelector('.pipe-item-status');
-  if (state === 'run') {
-    el.classList.add('is-active'); el.classList.remove('is-done');
-    s.dataset.currentState = 'run';
-    s.textContent = s.dataset[`${lang}-run`] || 'Processing...';
-  } else if (state === 'done') {
-    el.classList.remove('is-active'); el.classList.add('is-done');
-    s.dataset.currentState = 'done';
-    s.textContent = s.dataset[`${lang}-done`] || '✓ Done';
-  }
-}
+      /* ═══ Handle file ══════════════════════════════════════ */
+      function handleFile(file) {
+        selectedFile = file;
+        fileNameEl.textContent = file.name;
+        fileSizeEl.textContent = fmtBytes(file.size);
+        filePreview.classList.add('is-visible');
+      }
 
-/* ═══ Error ════════════════════════════════════════════ */
-function showError(msg) {
-  errorMsg.textContent = msg;
-  errorCard.classList.add('is-visible');
-  hideProgress();
-}
-function hideError() { errorCard.classList.remove('is-visible'); }
+      /* ═══ Analyze ══════════════════════════════════════════ */
+      window.startAnalysis = function () {
+        if (!selectedFile) return;
+        uploadFile(selectedFile);
+      };
 
-/* ═══ Risk helpers ═════════════════════════════════════ */
-function riskColor(lvl) {
-  const m = {CLEAN:'#059669',LOW:'#059669',MEDIUM:'#d97706',HIGH:'#ea580c',CRITICAL:'#dc2626',MALICIOUS:'#991b1b'};
-  return m[lvl?.toUpperCase()] || '#6b7280';
-}
-function riskRgb(lvl) {
-  const m = {CLEAN:'5,150,105',LOW:'5,150,105',MEDIUM:'217,119,6',HIGH:'234,88,12',CRITICAL:'220,38,38',MALICIOUS:'153,27,27'};
-  return m[lvl?.toUpperCase()] || '107,114,128';
-}
+      async function uploadFile(file) {
+        showProgress();
+        hideError();
+        resultsEl.classList.remove('is-visible');
+        resultsEl.innerHTML = '';
+        lastData = null;
+        if (analyzeBtn) analyzeBtn.disabled = true;
 
-/* ═══ Copy ══════════════════════════════════════════════ */
-function mkCopyBtn(val) {
-  const safe = esc(val).replace(/'/g,"\\'");
-  return `<button class="copy-btn" onclick="doCopy(this,'${safe}')">${t('copyBtn')}</button>`;
-}
-window.doCopy = (btn,val) => {
-  navigator.clipboard.writeText(val).then(() => {
-    btn.textContent = t('copied'); btn.classList.add('is-copied');
-    setTimeout(() => { btn.textContent = t('copyBtn'); btn.classList.remove('is-copied'); }, 1500);
-  });
-};
+        const form = new FormData();
+        form.append('file', file);
 
-/* ═══ Card helper ═══════════════════════════════════════ */
-function card(icon, title, body, open=false) {
-  return `
-    <div class="result-card ${open?'is-open':''} fade-up">
+        const steps = ['hash', 'entropy', 'pe', 'deep', 'strings', 'yara', 'office', 'mitre', 'risk'];
+
+        // Start fetch concurrently
+        const fetchPromise = fetch('/analyze', { method: 'POST', body: form });
+
+        let idx = 0;
+        const timer = setInterval(() => {
+          if (idx < steps.length) {
+            markStep(steps[idx], 'run');
+            if (idx > 0) markStep(steps[idx - 1], 'done');
+            idx++;
+          }
+        }, 300);
+
+        try {
+          const res = await fetchPromise;
+          clearInterval(timer);
+          steps.forEach(s => markStep(s, 'done'));
+          const data = await res.json();
+          if (!res.ok) { showError(data.error || `HTTP ${res.status}`); return; }
+          lastData = data;
+          setTimeout(() => { hideProgress(); renderResults(data); }, 300);
+        } catch (err) {
+          clearInterval(timer);
+          showError(t('networkErr'));
+        } finally {
+          if (analyzeBtn) analyzeBtn.disabled = false;
+        }
+      }
+
+      /* ═══ Progress ═════════════════════════════════════════ */
+      function showProgress() { progressEl.classList.add('is-visible'); resetSteps(); }
+      function hideProgress() { progressEl.classList.remove('is-visible'); }
+      function resetSteps() {
+        document.querySelectorAll('.pipe-item').forEach(el => {
+          el.classList.remove('is-active', 'is-done');
+          const s = el.querySelector('.pipe-item-status');
+          s.dataset.currentState = 'idle';
+          s.textContent = s.dataset[`${lang}-idle`] || 'Chờ...';
+        });
+      }
+      function markStep(name, state) {
+        const el = document.querySelector(`.pipe-item[data-step="${name}"]`);
+        if (!el) return;
+        const s = el.querySelector('.pipe-item-status');
+        if (state === 'run') {
+          el.classList.add('is-active'); el.classList.remove('is-done');
+          s.dataset.currentState = 'run';
+          s.textContent = s.dataset[`${lang}-run`] || 'Processing...';
+        } else if (state === 'done') {
+          el.classList.remove('is-active'); el.classList.add('is-done');
+          s.dataset.currentState = 'done';
+          s.textContent = s.dataset[`${lang}-done`] || '✓ Done';
+        }
+      }
+
+      /* ═══ Error ════════════════════════════════════════════ */
+      function showError(msg) {
+        errorMsg.textContent = msg;
+        errorCard.classList.add('is-visible');
+        hideProgress();
+      }
+      function hideError() { errorCard.classList.remove('is-visible'); }
+
+      /* ═══ Risk helpers ═════════════════════════════════════ */
+      function riskColor(lvl) {
+        const m = { CLEAN: '#059669', LOW: '#059669', MEDIUM: '#d97706', HIGH: '#ea580c', CRITICAL: '#dc2626', MALICIOUS: '#991b1b' };
+        return m[lvl?.toUpperCase()] || '#6b7280';
+      }
+      function riskRgb(lvl) {
+        const m = { CLEAN: '5,150,105', LOW: '5,150,105', MEDIUM: '217,119,6', HIGH: '234,88,12', CRITICAL: '220,38,38', MALICIOUS: '153,27,27' };
+        return m[lvl?.toUpperCase()] || '107,114,128';
+      }
+
+      /* ═══ Copy ══════════════════════════════════════════════ */
+      function mkCopyBtn(val) {
+        const safe = esc(val).replace(/'/g, "\\'");
+        return `<button class="copy-btn" onclick="doCopy(this,'${safe}')">${t('copyBtn')}</button>`;
+      }
+      window.doCopy = (btn, val) => {
+        navigator.clipboard.writeText(val).then(() => {
+          btn.textContent = t('copied'); btn.classList.add('is-copied');
+          setTimeout(() => { btn.textContent = t('copyBtn'); btn.classList.remove('is-copied'); }, 1500);
+        });
+      };
+
+      /* ═══ Card helper ═══════════════════════════════════════ */
+      function card(icon, title, body, open = false) {
+        return `
+    <div class="result-card ${open ? 'is-open' : ''} fade-up">
       <div class="card-head" onclick="this.parentElement.classList.toggle('is-open')">
         <div class="card-head-left">
           <div class="card-head-icon">${icon}</div>
@@ -1130,19 +1959,19 @@ function card(icon, title, body, open=false) {
       </div>
       <div class="card-body">${body}</div>
     </div>`;
-}
+      }
 
-/* ═══ Render Results ════════════════════════════════════ */
-function renderResults(data) {
-  resultsEl.innerHTML = '';
-  const risk  = data.risk || {};
-  const score = risk.score ?? 0;
-  const level = risk.level || 'UNKNOWN';
-  const rc    = riskColor(level);
-  const rr    = riskRgb(level);
+      /* ═══ Render Results ════════════════════════════════════ */
+      function renderResults(data) {
+        resultsEl.innerHTML = '';
+        const risk = data.risk || {};
+        const score = risk.score ?? 0;
+        const level = risk.level || 'UNKNOWN';
+        const rc = riskColor(level);
+        const rr = riskRgb(level);
 
-  /* Risk Banner */
-  resultsEl.innerHTML += `
+        /* Risk Banner */
+        resultsEl.innerHTML += `
     <div class="risk-banner fade-up" style="--risk-color:${rc};--risk-pct:${score};--risk-rgb:${rr}">
       <div class="risk-gauge" style="--risk-color:${rc};--risk-pct:${score}">
         <span class="risk-gauge-val">${score}</span>
@@ -1154,244 +1983,274 @@ function renderResults(data) {
       </div>
     </div>`;
 
-  /* File Info */
-  const h = data.hashes || {};
-  resultsEl.innerHTML += card('📄', t('fileInfo'), `
+        /* Executive Summary */
+        if (data.executive_summary) {
+          const sum = data.executive_summary;
+          resultsEl.innerHTML += card('📝', 'Tổng quan Phân tích', `
+      <table class="info-table" style="margin-bottom:0;">
+        <tr><td class="label" style="width:130px;">📌 <strong>Đây là gì?</strong></td><td class="value" style="color:var(--text-bright);">${esc(sum.what_it_is)}</td></tr>
+        <tr><td class="label"> <strong>Mục đích</strong></td><td class="value" style="color:var(--text-bright);">${esc(sum.purpose)}</td></tr>
+        <tr><td class="label"> <strong>Tác hại</strong></td><td class="value" style="color:var(--danger);">${esc(sum.harm)}</td></tr>
+        <tr><td class="label"> <strong>Lời khuyên</strong></td><td class="value" style="color:var(--accent);">${esc(sum.advice)}</td></tr>
+      </table>`, true);
+        }
+
+        /* File Info */
+        const h = data.hashes || {};
+        resultsEl.innerHTML += card('📄', t('fileInfo'), `
     <table class="info-table">
       <tr><td class="label">${t('filename')}</td><td class="value">${esc(data.filename)}</td></tr>
       <tr><td class="label">${t('filetype')}</td><td class="value">${esc(data.file_type)}</td></tr>
       ${h.file_size != null ? `<tr><td class="label">${t('filesize')}</td><td class="value">${fmtBytes(h.file_size)}</td></tr>` : ''}
-      ${h.md5    ? `<tr><td class="label">MD5</td><td class="value">${esc(h.md5)}${mkCopyBtn(h.md5)}</td></tr>` : ''}
-      ${h.sha1   ? `<tr><td class="label">SHA-1</td><td class="value">${esc(h.sha1)}${mkCopyBtn(h.sha1)}</td></tr>` : ''}
+      ${h.md5 ? `<tr><td class="label">MD5</td><td class="value">${esc(h.md5)}${mkCopyBtn(h.md5)}</td></tr>` : ''}
+      ${h.sha1 ? `<tr><td class="label">SHA-1</td><td class="value">${esc(h.sha1)}${mkCopyBtn(h.sha1)}</td></tr>` : ''}
       ${h.sha256 ? `<tr><td class="label">SHA-256</td><td class="value">${esc(h.sha256)}${mkCopyBtn(h.sha256)}</td></tr>` : ''}
       ${h.sha512 ? `<tr><td class="label">SHA-512</td><td class="value">${esc(h.sha512)}${mkCopyBtn(h.sha512)}</td></tr>` : ''}
     </table>`, true);
 
-  /* Entropy */
-  const entropy = data.entropy || {};
-  if (entropy.overall_entropy != null) {
-    const ent = entropy.overall_entropy;
-    const vIdx = ent > 7.2 ? 2 : ent > 6.0 ? 1 : 0;
-    const vCls = ['tag--ok','tag--warn','tag--danger'][vIdx];
-    const verdict = t('entVerdict')[vIdx];
-    resultsEl.innerHTML += card('📊', t('entropyTitle'), `
+        /* Entropy */
+        const entropy = data.entropy || {};
+        if (entropy.overall_entropy != null) {
+          const ent = entropy.overall_entropy;
+          const vIdx = ent > 7.2 ? 2 : ent > 6.0 ? 1 : 0;
+          const vCls = ['tag--ok', 'tag--warn', 'tag--danger'][vIdx];
+          const verdict = t('entVerdict')[vIdx];
+          resultsEl.innerHTML += card('📊', t('entropyTitle'), `
       <table class="info-table">
         <tr><td class="label">${t('overall')}</td><td class="value">${ent.toFixed(4)} <span class="tag ${vCls}">${verdict}</span></td></tr>
-        ${entropy.chunk_stats ? `<tr><td class="label">${t('stats')}</td><td class="value">Min: ${entropy.chunk_stats.min?.toFixed(3)??'—'} · Max: ${entropy.chunk_stats.max?.toFixed(3)??'—'} · Avg: ${entropy.chunk_stats.mean?.toFixed(3)??'—'}</td></tr>` : ''}
+        ${entropy.chunk_stats ? `<tr><td class="label">${t('stats')}</td><td class="value">Min: ${entropy.chunk_stats.min?.toFixed(3) ?? '—'} · Max: ${entropy.chunk_stats.max?.toFixed(3) ?? '—'} · Avg: ${entropy.chunk_stats.mean?.toFixed(3) ?? '—'}</td></tr>` : ''}
       </table>`);
-  }
+        }
 
-  /* PE */
-  const pe = data.pe || {};
-  if (pe.machine || pe.compile_time || pe.sections) {
-    let rows = '';
-    if (pe.machine)       rows += `<tr><td class="label">${t('arch')}</td><td class="value">${esc(pe.machine)}</td></tr>`;
-    if (pe.compile_time)  rows += `<tr><td class="label">${t('compileTime')}</td><td class="value">${esc(pe.compile_time)}</td></tr>`;
-    if (pe.entry_point)   rows += `<tr><td class="label">${t('entryPoint')}</td><td class="value">${esc(pe.entry_point)}</td></tr>`;
-    if (pe.imphash)       rows += `<tr><td class="label">${t('impHash')}</td><td class="value">${esc(pe.imphash)}${mkCopyBtn(pe.imphash)}</td></tr>`;
+        /* PE */
+        const pe = data.pe || {};
+        if (pe.machine || pe.compile_time || pe.sections) {
+          let rows = '';
+          if (pe.machine) rows += `<tr><td class="label">${t('arch')}</td><td class="value">${esc(pe.machine)}</td></tr>`;
+          if (pe.compile_time) rows += `<tr><td class="label">${t('compileTime')}</td><td class="value">${esc(pe.compile_time)}</td></tr>`;
+          if (pe.entry_point) rows += `<tr><td class="label">${t('entryPoint')}</td><td class="value">${esc(pe.entry_point)}</td></tr>`;
+          if (pe.imphash) rows += `<tr><td class="label">${t('impHash')}</td><td class="value">${esc(pe.imphash)}${mkCopyBtn(pe.imphash)}</td></tr>`;
 
-    let secHtml = '';
-    if (pe.sections?.length) {
-      secHtml = `<p class="card-section-title">${t('sections')}</p><div class="tag-list">`;
-      pe.sections.forEach(s => {
-        const name = s.name||s.Name||'??';
-        const ent  = s.entropy??s.Entropy??0;
-        const cls  = ent>7.2?'tag--danger':ent>6.5?'tag--warn':'';
-        secHtml += `<span class="tag ${cls}">${esc(name)} · ${ent.toFixed(2)}</span>`;
-      });
-      secHtml += '</div>';
-    }
-    let impHtml = '';
-    if (pe.suspicious_imports?.length) {
-      impHtml = `<p class="card-section-title">${t('susImports')}</p><div class="tag-list">`;
-      pe.suspicious_imports.forEach(imp => { impHtml += `<span class="tag tag--warn">${esc(imp)}</span>`; });
-      impHtml += '</div>';
-    }
-    resultsEl.innerHTML += card('⚙️', t('peTitle'), `<table class="info-table">${rows}</table>${secHtml}${impHtml}`);
-  }
+          let secHtml = '';
+          if (pe.sections?.length) {
+            secHtml = `<p class="card-section-title">${t('sections')}</p><div class="tag-list">`;
+            pe.sections.forEach(s => {
+              const name = s.name || s.Name || '??';
+              const ent = s.entropy ?? s.Entropy ?? 0;
+              const cls = ent > 7.2 ? 'tag--danger' : ent > 6.5 ? 'tag--warn' : '';
+              secHtml += `<span class="tag ${cls}">${esc(name)} · ${ent.toFixed(2)}</span>`;
+            });
+            secHtml += '</div>';
+          }
+          let impHtml = '';
+          if (pe.suspicious_imports?.length) {
+            impHtml = `<p class="card-section-title">${t('susImports')}</p><div class="tag-list">`;
+            pe.suspicious_imports.forEach(imp => { impHtml += `<span class="tag tag--warn">${esc(imp)}</span>`; });
+            impHtml += '</div>';
+          }
+          resultsEl.innerHTML += card('⚙️', t('peTitle'), `<table class="info-table">${rows}</table>${secHtml}${impHtml}`);
+        }
 
-  /* Strings / IoCs */
-  const iocs = (data.strings||{}).iocs||{};
-  const hasIoc = Object.values(iocs).some(v => Array.isArray(v)&&v.length);
-  if (hasIoc) {
-    const labels = t('iocLabels');
-    let iocHtml = '';
-    Object.entries(labels).forEach(([key,label]) => {
-      const items = iocs[key];
-      if (items?.length) {
-        iocHtml += `<p class="card-section-title">${label}</p><div class="tag-list">`;
-        items.slice(0,20).forEach(item => { iocHtml += `<span class="tag tag--warn">${esc(item)}</span>`; });
-        if (items.length>20) iocHtml += `<span class="tag">+${items.length-20} ${t('more')}</span>`;
-        iocHtml += '</div>';
-      }
-    });
-    resultsEl.innerHTML += card('🔍', t('stringsTitle'), iocHtml);
-  }
+        /* Deep Static */
+        const deep = data.deep_static || {};
+        if (deep.available) {
+          let deepHtml = '';
+          if (deep.packer_detected) {
+            deepHtml += `<tr><td class="label">Packer</td><td class="value"><span class="tag tag--danger">${esc(deep.packer_detected)}</span></td></tr>`;
+          }
+          const obf = deep.obfuscation || {};
+          if (obf.verdict && obf.verdict !== 'CLEAN') {
+            const cls = obf.verdict === 'LIKELY_OBFUSCATED' ? 'tag--danger' : 'tag--warn';
+            deepHtml += `<tr><td class="label">Obfuscation</td><td class="value"><span class="tag ${cls}">${esc(obf.verdict)}</span> (XOR: ${(obf.xor_density * 100).toFixed(1)}%, JMP: ${(obf.jmp_density * 100).toFixed(1)}%)</td></tr>`;
+          }
+          if (deep.crypto_constants?.length) {
+            let tags = '';
+            deep.crypto_constants.slice(0, 10).forEach(c => tags += `<span class="tag tag--warn">${esc(c.label)}</span>`);
+            deepHtml += `<tr><td class="label">Crypto Constants</td><td class="value"><div class="tag-list">${tags}</div></td></tr>`;
+          }
+          if (deep.anti_analysis?.apis?.length) {
+            let tags = '';
+            deep.anti_analysis.apis.forEach(a => tags += `<span class="tag tag--danger">${esc(a)}</span>`);
+            deepHtml += `<tr><td class="label">Anti-Analysis APIs</td><td class="value"><div class="tag-list">${tags}</div></td></tr>`;
+          }
+          if (deep.disasm_summary?.total_instructions > 0) {
+            deepHtml += `<tr><td class="label">Disassembly</td><td class="value">${deep.disasm_summary.total_instructions} insts, ${deep.cfg_summary?.estimated_functions} funcs</td></tr>`;
+          }
 
-  /* YARA */
-  const yaraMatches = (data.yara||{}).matches||[];
-  if (yaraMatches.length) {
-    let yaraHtml = '<div class="tag-list">';
-    yaraMatches.forEach(m => {
-      const name = typeof m==='string'?m:(m.rule||m.name||JSON.stringify(m));
-      yaraHtml += `<span class="tag tag--danger">🎯 ${esc(name)}</span>`;
-    });
-    yaraHtml += '</div>';
-    resultsEl.innerHTML += card('🎯', `${t('yaraTitle')} (${yaraMatches.length})`, yaraHtml, true);
-  }
+          if (deepHtml) {
+            resultsEl.innerHTML += card('🧠', t('deepTitle'), `<table class="info-table">${deepHtml}</table>`);
+          }
+        }
 
-  /* VirusTotal */
-  const vt = data.virustotal||{};
-  if (vt.found||vt.positives!=null) {
-    const pos  = vt.positives??0;
-    const tot  = vt.total??0;
-    const cls  = pos>5?'tag--danger':pos>0?'tag--warn':'tag--ok';
-    resultsEl.innerHTML += card('🛡️', t('vtTitle'), `
-      <table class="info-table">
-        <tr><td class="label">${t('detections')}</td><td class="value"><span class="tag ${cls}">${pos} / ${tot} engines</span></td></tr>
-        ${vt.scan_date?`<tr><td class="label">${t('scanDate')}</td><td class="value">${esc(vt.scan_date)}</td></tr>`:''}
-        ${vt.permalink?`<tr><td class="label">${t('report')}</td><td class="value"><a href="${esc(vt.permalink)}" target="_blank" rel="noopener" style="color:var(--accent)">${t('vtLink')}</a></td></tr>`:''}
-      </table>`, pos>0);
-  }
+        /* Strings / IoCs */
+        const iocs = (data.strings || {}).iocs || {};
+        const hasIoc = Object.values(iocs).some(v => Array.isArray(v) && v.length);
+        if (hasIoc) {
+          const labels = t('iocLabels');
+          let iocHtml = '';
+          Object.entries(labels).forEach(([key, label]) => {
+            const items = iocs[key];
+            if (items?.length) {
+              iocHtml += `<p class="card-section-title">${label}</p><div class="tag-list">`;
+              items.slice(0, 20).forEach(item => { iocHtml += `<span class="tag tag--warn">${esc(item)}</span>`; });
+              if (items.length > 20) iocHtml += `<span class="tag">+${items.length - 20} ${t('more')}</span>`;
+              iocHtml += '</div>';
+            }
+          });
+          resultsEl.innerHTML += card('🔍', t('stringsTitle'), iocHtml);
+        }
 
-  /* MITRE */
-  const techniques = (data.mitre||{}).techniques||[];
-  if (techniques.length) {
-    let mitreHtml = '<div class="tag-list">';
-    techniques.forEach(tc => {
-      const id   = tc.technique_id||tc.id||'';
-      const name = tc.technique_name||tc.name||'';
-      mitreHtml += `<span class="tag tag--warn">🗺 ${esc(id)} — ${esc(name)}</span>`;
-    });
-    mitreHtml += '</div>';
-    resultsEl.innerHTML += card('🗺️', `${t('mitreTitle')} (${techniques.length})`, mitreHtml);
-  }
+        /* YARA */
+        const yaraMatches = (data.yara || {}).matches || [];
+        if (yaraMatches.length) {
+          let yaraHtml = '<div class="tag-list">';
+          yaraMatches.forEach(m => {
+            const name = typeof m === 'string' ? m : (m.rule || m.name || JSON.stringify(m));
+            yaraHtml += `<span class="tag tag--danger">🎯 ${esc(name)}</span>`;
+          });
+          yaraHtml += '</div>';
+          resultsEl.innerHTML += card('🎯', `${t('yaraTitle')} (${yaraMatches.length})`, yaraHtml, true);
+        }
 
-  /* Risk Factors */
-  const factors = risk.breakdown||risk.factors||[];
-  if (factors.length) {
-    let factHtml = '<div style="display:flex;flex-direction:column;gap:6px">';
-    factors.forEach(f => {
-      const label = typeof f==='string'?f:(f.feature||f.description||f.label||f.name||'');
-      const pts   = typeof f==='object'?(f.score||f.points||''):'';
-      factHtml += `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+
+        /* MITRE */
+        const techniques = (data.mitre || {}).techniques || [];
+        if (techniques.length) {
+          let mitreHtml = '<div class="tag-list">';
+          techniques.forEach(tc => {
+            const id = tc.technique_id || tc.id || '';
+            const name = tc.technique_name || tc.name || '';
+            mitreHtml += `<span class="tag tag--warn">🗺 ${esc(id)} — ${esc(name)}</span>`;
+          });
+          mitreHtml += '</div>';
+          resultsEl.innerHTML += card('🗺️', `${t('mitreTitle')} (${techniques.length})`, mitreHtml);
+        }
+
+        /* Risk Factors */
+        const factors = risk.breakdown || risk.factors || [];
+        if (factors.length) {
+          let factHtml = '<div style="display:flex;flex-direction:column;gap:6px">';
+          factors.forEach(f => {
+            const label = typeof f === 'string' ? f : (f.feature || f.description || f.label || f.name || '');
+            const pts = typeof f === 'object' ? (f.score || f.points || '') : '';
+            factHtml += `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:13px">${esc(label)}</span>
-        ${pts?`<span class="tag tag--warn">+${pts}</span>`:''}
+        ${pts ? `<span class="tag tag--warn">+${pts}</span>` : ''}
       </div>`;
-    });
-    factHtml += '</div>';
-    resultsEl.innerHTML += card('⚠️', `${t('riskFactors')} (${factors.length})`, factHtml);
-  }
+          });
+          factHtml += '</div>';
+          resultsEl.innerHTML += card('⚠️', `${t('riskFactors')} (${factors.length})`, factHtml);
+        }
 
-  /* Analysis warnings */
-  const errors = data.analysis_errors||[];
-  if (errors.length) {
-    let errHtml = '<div style="display:flex;flex-direction:column;gap:5px">';
-    errors.forEach(e => { errHtml += `<span style="color:var(--orange);font-size:13px">⚠ ${esc(e)}</span>`; });
-    errHtml += '</div>';
-    resultsEl.innerHTML += card('⚠️', `${t('analysisWarn')} (${errors.length})`, errHtml);
-  }
+        /* Analysis warnings */
+        const errors = data.analysis_errors || [];
+        if (errors.length) {
+          let errHtml = '<div style="display:flex;flex-direction:column;gap:5px">';
+          errors.forEach(e => { errHtml += `<span style="color:var(--orange);font-size:13px">⚠ ${esc(e)}</span>`; });
+          errHtml += '</div>';
+          resultsEl.innerHTML += card('⚠️', `${t('analysisWarn')} (${errors.length})`, errHtml);
+        }
 
-  /* Raw JSON */
-  const fmtJson = syntaxHighlight(data);
-  resultsEl.innerHTML += card('💻', t('rawJson'), `
+        /* Raw JSON */
+        const fmtJson = syntaxHighlight(data);
+        resultsEl.innerHTML += card('💻', t('rawJson'), `
     <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
       <button class="copy-btn" onclick="copyRawJson(this)">${t('copyJson')}</button>
     </div>
     <pre class="json-pre"><code id="rawJsonCode">${fmtJson}</code></pre>`);
 
-  /* Downloads */
-  const urls = data.report_urls||{};
-  if (urls.json||urls.html) {
-    let dl = '<div class="download-bar">';
-    if (urls.html) dl += `<a class="dl-btn dl-btn--primary" href="${esc(urls.html)}" target="_blank">${t('dlHtml')}</a>`;
-    if (urls.json) dl += `<a class="dl-btn" href="${esc(urls.json)}" target="_blank">${t('dlJson')}</a>`;
-    dl += '</div>';
-    resultsEl.innerHTML += dl;
-  }
-  if (data.analysis_id) {
-    resultsEl.innerHTML += `
+        /* Downloads */
+        const urls = data.report_urls || {};
+        if (urls.html) {
+          let dl = '<div class="download-bar">';
+          dl += `<a class="dl-btn dl-btn--primary" href="${esc(urls.html)}" target="_blank">${t('dlHtml')}</a>`;
+          dl += '</div>';
+          resultsEl.innerHTML += dl;
+        }
+        if (data.analysis_id) {
+          resultsEl.innerHTML += `
       <div class="download-bar" style="margin-top:6px">
         <a class="dl-btn" href="/export/stix/${esc(data.analysis_id)}" target="_blank">${t('dlStix')}</a>
       </div>`;
-  }
+        }
 
-  /* New Analysis */
-  resultsEl.innerHTML += `
+        /* New Analysis */
+        resultsEl.innerHTML += `
     <div class="new-analysis">
       <button class="new-btn" onclick="resetUI()">${t('newAnalysis')}</button>
     </div>`;
 
-  resultsEl.classList.add('is-visible');
+        resultsEl.classList.add('is-visible');
 
-  /* Stagger animation */
-  resultsEl.querySelectorAll('.result-card,.risk-banner').forEach((el,i) => {
-    el.style.animationDelay = `${i*0.065}s`;
-  });
-}
+        /* Stagger animation - render nhanh */
+        resultsEl.querySelectorAll('.result-card,.risk-banner').forEach((el, i) => {
+          el.style.animationDelay = `${i * 0.065}s`;
+        });
+      }
 
-/* ═══ JSON syntax highlight ════════════════════════════ */
-function syntaxHighlight(json) {
-  if (typeof json!=='string') json = JSON.stringify(json,null,2);
-  json = json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  return json.replace(/(\"(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*\"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, m => {
-    let cls = 'json-number';
-    if (/^"/.test(m)) cls = /:$/.test(m)?'json-key':'json-string';
-    else if (/true|false/.test(m)) cls = 'json-boolean';
-    else if (/null/.test(m)) cls = 'json-null';
-    return `<span class="${cls}">${m}</span>`;
-  });
-}
-window.copyRawJson = btn => {
-  const el = document.getElementById('rawJsonCode');
-  if (!el) return;
-  navigator.clipboard.writeText(el.textContent).then(() => {
-    btn.textContent = t('copiedJson'); btn.classList.add('is-copied');
-    setTimeout(() => { btn.textContent = t('copyJson'); btn.classList.remove('is-copied'); }, 1500);
-  });
-};
+      /* ═══ JSON syntax highlight ════════════════════════════ */
+      function syntaxHighlight(json) {
+        if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
+        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return json.replace(/(\"(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*\"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, m => {
+          let cls = 'json-number';
+          if (/^"/.test(m)) cls = /:$/.test(m) ? 'json-key' : 'json-string';
+          else if (/true|false/.test(m)) cls = 'json-boolean';
+          else if (/null/.test(m)) cls = 'json-null';
+          return `<span class="${cls}">${m}</span>`;
+        });
+      }
+      window.copyRawJson = btn => {
+        const el = document.getElementById('rawJsonCode');
+        if (!el) return;
+        navigator.clipboard.writeText(el.textContent).then(() => {
+          btn.textContent = t('copiedJson'); btn.classList.add('is-copied');
+          setTimeout(() => { btn.textContent = t('copyJson'); btn.classList.remove('is-copied'); }, 1500);
+        });
+      };
 
-/* ═══ Reset ═════════════════════════════════════════════ */
-window.resetUI = () => {
-  resultsEl.classList.remove('is-visible');
-  resultsEl.innerHTML = '';
-  filePreview.classList.remove('is-visible');
-  hideError(); hideProgress();
-  fileInput.value = '';
-  selectedFile = null;
-  lastData = null;
-  window.scrollTo({top:0,behavior:'smooth'});
-};
+      /* ═══ Reset ═════════════════════════════════════════════ */
+      window.resetUI = () => {
+        resultsEl.classList.remove('is-visible');
+        resultsEl.innerHTML = '';
+        filePreview.classList.remove('is-visible');
+        hideError(); hideProgress();
+        fileInput.value = '';
+        selectedFile = null;
+        lastData = null;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
 
-/* ═══ Health check ══════════════════════════════════════ */
-fetch('/health').then(r=>r.json()).then(d => {
-  const dot   = document.querySelector('.status-dot');
-  const label = $('statusLabel');
-  if (d.status==='ok') {
-    dot.style.background='var(--green)';
-    dot.style.boxShadow='0 0 6px var(--green)';
-    label.dataset.state = 'online';
-    label.textContent = t('statusOnline');
-  } else {
-    dot.style.background='var(--red)';
-    dot.style.boxShadow='none';
-    label.dataset.state = 'offline';
-    label.textContent = t('statusOffline');
-  }
-}).catch(() => {
-  const dot   = document.querySelector('.status-dot');
-  const label = $('statusLabel');
-  dot.style.background='var(--red)';
-  dot.style.boxShadow='none';
-  label.dataset.state = 'offline';
-  label.textContent = t('statusOffline');
-});
+      /* ═══ Health check ══════════════════════════════════════ */
+      fetch('/health').then(r => r.json()).then(d => {
+        const dot = document.querySelector('.status-dot');
+        const label = $('statusLabel');
+        if (d.status === 'ok') {
+          dot.style.background = 'var(--green)';
+          dot.style.boxShadow = '0 0 6px var(--green)';
+          label.dataset.state = 'online';
+          label.textContent = t('statusOnline');
+        } else {
+          dot.style.background = 'var(--red)';
+          dot.style.boxShadow = 'none';
+          label.dataset.state = 'offline';
+          label.textContent = t('statusOffline');
+        }
+      }).catch(() => {
+        const dot = document.querySelector('.status-dot');
+        const label = $('statusLabel');
+        dot.style.background = 'var(--red)';
+        dot.style.boxShadow = 'none';
+        label.dataset.state = 'offline';
+        label.textContent = t('statusOffline');
+      });
 
-/* ═══ Init ══════════════════════════════════════════════ */
-applyTheme(theme);
-applyLang(lang);
+      /* ═══ Init ══════════════════════════════════════════════ */
+      applyTheme(theme);
+      applyLang(lang);
 
-})();
-</script>
+    })();
+  </script>
 </body>
+
 </html>

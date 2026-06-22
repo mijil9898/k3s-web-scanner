@@ -45,6 +45,8 @@ echo "Building $MALWARE_IMAGE"
 docker build -t $MALWARE_IMAGE .
 
 TMP_TAR=$(mktemp --suffix=-images.tar)
+trap 'rm -f "$TMP_TAR" 2>/dev/null || true' EXIT
+
 echo "Saving images to $TMP_TAR"
 docker save $FRONTEND_IMAGE $BACKEND_IMAGE $MALWARE_IMAGE -o "$TMP_TAR"
 
@@ -54,7 +56,6 @@ if command -v k3d >/dev/null 2>&1; then
 else
   echo "k3d not available; ensure the images are available to your cluster (push to registry)." >&2
 fi
-trap 'rm -f "$TMP_TAR" 2>/dev/null || true' EXIT
 
 echo "Ensure secret $NAMESPACE/malware-secrets exists (creating random values if missing)"
 kubectl -n $NAMESPACE create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -
@@ -75,6 +76,14 @@ if ! kubectl -n $NAMESPACE get secret postgres-secret >/dev/null 2>&1; then
     --from-literal=password="$DB_PASS"
 fi
 
+echo "Ensure secret $NAMESPACE/neo4j-secret exists"
+if ! kubectl -n $NAMESPACE get secret neo4j-secret > /dev/null 2>&1; then
+  NEO4J_PASS=$(openssl rand -hex 16)
+  kubectl -n $NAMESPACE create secret generic neo4j-secret \
+    --from-literal=password="$NEO4J_PASS" \
+    --from-literal=neo4j_auth="neo4j/$NEO4J_PASS"
+fi
+
 echo "Helm upgrade/install mijil chart"
 cd "$REPO_ROOT/helm-charts/mijil-chart"
 helm upgrade --install mijil . -n $NAMESPACE --create-namespace
@@ -84,7 +93,14 @@ kubectl -n $NAMESPACE wait --for=condition=available --timeout=180s deployment/m
 kubectl -n $NAMESPACE rollout status deployment/malware-analyzer --timeout=180s || true
 kubectl -n $NAMESPACE rollout status deployment/cloudflared --timeout=180s || true
 
+echo "Waiting for Neo4j to be ready (may take up to 60s for JVM startup)"
+kubectl -n $NAMESPACE rollout status deployment/neo4j --timeout=240s || true
+
 echo "Cloudflared public URL (may take a minute to appear):"
 kubectl -n $NAMESPACE logs -l app=cloudflared --tail=400 | grep -Eo 'https?://[^"\s]*trycloudflare\.com[^"\s]*' || true
+
+echo ""
+echo "=== Pod status ==="
+kubectl get pods -n $NAMESPACE
 
 echo "Done."

@@ -72,3 +72,26 @@ cloudflared:
 
 monitoring:
   enabled: false
+
+# ── Phase 2: Neo4j Threat Intelligence Graph ──────────────────────────────────
+neo4j:
+  enabled: true
+  image:
+    repository: neo4j
+    tag: "5.18-community"
+  # Credentials — stored in neo4j-secret (key: password)
+  secretName: neo4j-secret
+  # Storage
+  storage: 5Gi
+  storageClass: local-path
+  # JVM memory limits (keep small for single-node k3s)
+  memory:
+    heap: 256m
+    pagecache: 256m
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "768Mi"
