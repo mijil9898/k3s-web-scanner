@@ -71,4 +71,4 @@ cloudflared:
   quickTunnel: true
 
 monitoring:
-  enabled: true
+  enabled: false
