@@ -21,12 +21,40 @@ if command -v k3d >/dev/null 2>&1; then
         echo "🟢 Tạo mới cluster k3d: $K3D_CLUSTER"
         k3d cluster create "$K3D_CLUSTER" --servers 1 --agents 1 -p "80:80@loadbalancer" -p "443:443@loadbalancer"
     fi
+    echo "🔄 Cập nhật kubeconfig..."
+    k3d kubeconfig merge "$K3D_CLUSTER" --kubeconfig-merge-default
+
+    # k3d's kubeconfig uses 0.0.0.0:<port> (host port mapping) which breaks
+    # after Docker/WSL restarts when the port binding is lost.
+    # Patch the server address to the container's stable internal Docker IP instead.
+    SERVER_CONTAINER="k3d-${K3D_CLUSTER}-server-0"
+    SERVER_IP=$(docker inspect "$SERVER_CONTAINER" \
+        --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' 2>/dev/null | head -1)
+    if [ -n "$SERVER_IP" ]; then
+        echo "🔧 Gán server API: https://${SERVER_IP}:6443"
+        kubectl config set-cluster "k3d-${K3D_CLUSTER}" --server="https://${SERVER_IP}:6443"
+    else
+        echo "⚠️  Không lấy được IP container ${SERVER_CONTAINER}; dùng địa chỉ mặc định từ kubeconfig." >&2
+    fi
 else
     echo "⚠️  k3d không cài đặt. Nếu bạn dùng k3s, đảm bảo kubeconfig trỏ tới cluster đúng." >&2
 fi
 
 echo "⏳ Đang chờ Kubernetes API sẵn sàng..."
-kubectl wait --for=condition=Ready nodes --all --timeout=120s || true
+API_READY=false
+for i in $(seq 1 30); do
+    if kubectl cluster-info >/dev/null 2>&1; then
+        API_READY=true
+        break
+    fi
+    echo "  [${i}/30] API chưa sẵn sàng, thử lại sau 3s..."
+    sleep 3
+done
+if [ "$API_READY" = false ]; then
+    echo "❌ Kubernetes API không phản hồi sau 90 giây. Kiểm tra k3d cluster status." >&2
+    exit 1
+fi
+kubectl wait --for=condition=Ready nodes --all --timeout=60s || true
 
 echo "📦 Cluster đã sẵn sàng. Để deploy ứng dụng, hãy chạy thủ công script: ./scripts/deploy-all.sh"
 
