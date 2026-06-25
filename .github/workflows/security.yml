@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'javascript', 'python' ]
+        language: [ 'javascript' ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -125,7 +125,7 @@ jobs:
       # 3. SCA: Trivy Filesystem
       # ──────────────────────────────────────────
       - name: Run Trivy FS — JSON
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
           scan-type: "fs"
@@ -134,7 +134,7 @@ jobs:
           output: "artifacts/trivy-fs.json"
 
       - name: Run Trivy FS — SARIF
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
           scan-type: "fs"

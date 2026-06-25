@@ -131,7 +131,7 @@ jobs:
       # Trivy Image Scan (Warn only)
       # ──────────────────────────────────────────────────────────────
       - name: Run Trivy Image Scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service.image }}@${{ steps.docker_build.outputs.digest }}
