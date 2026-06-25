@@ -1,10 +1,25 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { Pool } from "pg";
 import * as promClient from "prom-client";
 
 const app = express();
 const port = process.env.PORT || 8080;
+
+// Security: Helmet sets various HTTP headers
+app.use(helmet());
+
+// Security: Rate Limiting
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: { error: "Too many requests, please try again later." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use("/api/", limiter);
 
 // Prometheus metrics
 const register = new promClient.Registry();
@@ -18,8 +33,23 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
-app.use(cors());
-app.use(express.json());
+// Security: Strict CORS
+const allowedOrigins = [
+  "https://mijil.yourdomain.com",
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  }
+}));
+
+app.use(express.json({ limit: '1mb' })); // Security: Limit JSON body payload
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
 
