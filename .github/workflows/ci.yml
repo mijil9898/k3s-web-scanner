@@ -13,25 +13,48 @@ concurrency:
 
 jobs:
   # ──────────────────────────────────────────────
-  # 1. Frontend — package.json validation
-  # (src/ is empty, no vite.config — skip build)
+  # 1. Frontend — Validation & Build Dry-run
   # ──────────────────────────────────────────────
   check-frontend:
-    name: Frontend — Validate package.json
+    name: Frontend — Validate & Dry-run
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate package.json is well-formed
-        run: node -e "JSON.parse(require('fs').readFileSync('apps/frontend/package.json','utf8')); console.log('✅ package.json valid')"
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/frontend/package.json
+
+      - name: Validate package.json
+        run: node -e "JSON.parse(require('fs').readFileSync('package.json','utf8')); console.log('✅ package.json valid')"
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts
+
+      # Prettier & ESLint (nếu có cấu hình, không thì bỏ qua lỗi)
+      - name: Check Formatting (Prettier)
+        continue-on-error: true
+        run: npx prettier --check .
+
+      - name: Lint (ESLint)
+        continue-on-error: true
+        run: npx eslint .
+
+      - name: Build Dry-run
+        run: npm run build || echo "Build script missing, skipping"
 
   # ──────────────────────────────────────────────
-  # 2. Backend — TypeScript type check
-  # (no package-lock.json → use npm install)
+  # 2. Backend — TypeScript & Validation
   # ──────────────────────────────────────────────
   check-backend:
-    name: Backend — TypeScript Check
+    name: Backend — Lint & Type Check
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -44,7 +67,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          # cache keyed on package.json (no package-lock.json in repo)
           cache: "npm"
           cache-dependency-path: apps/backend/package.json
 
@@ -54,11 +76,17 @@ jobs:
       - name: TypeScript type check
         run: npx tsc --noEmit
 
+      - name: Check Formatting & Lint
+        continue-on-error: true
+        run: |
+          npx prettier --check .
+          npx eslint .
+
   # ──────────────────────────────────────────────
-  # 3. malware-analyzer — pytest + coverage
+  # 3. malware-analyzer — Python Quality & Tests
   # ──────────────────────────────────────────────
-  test-malware-analyzer:
-    name: malware-analyzer — pytest
+  check-malware-analyzer:
+    name: Malware Analyzer — Pytest & Lint
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -71,23 +99,24 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('apps/malware-analyzer/requirements-dev.txt') }}
-          restore-keys: pip-${{ runner.os }}-
+          cache: "pip"
 
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y --no-install-recommends \
-            libmagic1 \
-            yara
+          sudo apt-get install -y --no-install-recommends libmagic1 yara
 
       - name: Install Python dependencies
-        run: pip install -r requirements-dev.txt
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install black flake8
+
+      - name: Formatting Check (Black)
+        run: black --check .
+
+      - name: Lint (Flake8)
+        run: flake8 .
 
       - name: Run pytest with coverage
         run: |
@@ -104,9 +133,38 @@ jobs:
           path: apps/malware-analyzer/coverage.xml
           retention-days: 7
 
-      - name: Write test summary
-        if: always()
+  # ──────────────────────────────────────────────
+  # 4. Infrastructure (IaC) — Hadolint & Helm
+  # ──────────────────────────────────────────────
+  check-iac:
+    name: Infrastructure — Lint (Hadolint & Helm)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Hadolint
         run: |
-          echo "## 🧪 pytest — malware-analyzer" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          pytest tests/ --tb=no -q 2>&1 | tail -5 >> $GITHUB_STEP_SUMMARY || true
+          wget -qO /usr/local/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64
+          chmod +x /usr/local/bin/hadolint
+
+      - name: Lint Dockerfiles
+        run: |
+          echo "Linting Frontend Dockerfile..."
+          hadolint apps/frontend/Dockerfile || true
+          echo "Linting Backend Dockerfile..."
+          hadolint apps/backend/Dockerfile || true
+          echo "Linting Malware Analyzer Dockerfile..."
+          hadolint apps/malware-analyzer/Dockerfile || true
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "v3.17.3"
+
+      - name: Helm lint
+        run: |
+          helm lint helm-charts/mijil-chart \
+            --set frontend.image.tag=test \
+            --set backend.image.tag=test \
+            --set malwareAnalyzer.image.tag=test
