@@ -16,10 +16,10 @@ services:
     environment:
       DB_HOST: db
       DB_PORT: "5432"
-      DB_NAME: mijil
-      DB_USER: mijil
-      DB_PASSWORD: secret
-      NODE_ENV: development
+      DB_NAME: ${DB_NAME:-mijil}
+      DB_USER: ${DB_USER:-mijil}
+      DB_PASSWORD: ${DB_PASSWORD:?err_DB_PASSWORD_not_set}
+      NODE_ENV: ${NODE_ENV:-production}
       PORT: "8080"
     depends_on:
       - db
@@ -33,12 +33,13 @@ services:
     ports:
       - '5000:5000'
     environment:
-      FLASK_DEBUG: "true"
-      SECRET_KEY: dev-secret-key-change-in-production
-      ALLOW_PUBLIC_UPLOADS: "true"
-      ANALYZE_RATE_LIMIT_PER_MINUTE: "60"
-      VT_API_KEY: ""
-      OTX_API_KEY: ""
+      FLASK_DEBUG: "false"
+      SECRET_KEY: ${MALWARE_SECRET_KEY:?err_MALWARE_SECRET_KEY_not_set}
+      ALLOW_PUBLIC_UPLOADS: ${ALLOW_PUBLIC_UPLOADS:-false}
+      ANALYZE_AUTH_TOKEN: ${ANALYZE_AUTH_TOKEN:-}
+      ANALYZE_RATE_LIMIT_PER_MINUTE: ${ANALYZE_RATE_LIMIT_PER_MINUTE:-30}
+      VT_API_KEY: ${VT_API_KEY:-}
+      OTX_API_KEY: ${OTX_API_KEY:-}
     volumes:
       - ./apps/malware-analyzer/uploads:/app/uploads
       - ./apps/malware-analyzer/reports:/app/reports
@@ -51,9 +52,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: mijil
-      POSTGRES_USER: mijil
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ${DB_NAME:-mijil}
+      POSTGRES_USER: ${DB_USER:-mijil}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?err_DB_PASSWORD_not_set}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./apps/database/init.sql:/docker-entrypoint-initdb.d/init.sql

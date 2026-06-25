@@ -37,4 +37,27 @@ app.get("/api/projects", async (_, res) => {
   }
 });
 
+app.post("/api/contact", async (req, res) => {
+  const { name, email, message } = req.body;
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: "name, email, and message are required" });
+  }
+  if (typeof name !== "string" || typeof email !== "string" || typeof message !== "string") {
+    return res.status(400).json({ error: "Invalid input types" });
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: "Invalid email format" });
+  }
+  try {
+    await pool.query(
+      "INSERT INTO contacts (name, email, message) VALUES ($1, $2, $3)",
+      [name.slice(0, 100), email.slice(0, 255), message.slice(0, 5000)]
+    );
+    res.json({ success: true, message: "Contact saved successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 app.listen(port, () => console.log(`Backend running on :${port}`));

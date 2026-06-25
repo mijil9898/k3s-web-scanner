@@ -21,3 +21,7 @@ backups/
 # Docker
 .dockerignore
 kubeconfig
+
+# ML Models (không commit files .txt model lớn)
+apps/malware-analyzer/models/*.txt
+apps/malware-analyzer/models/model_metadata.json
