@@ -92,7 +92,7 @@ spec:
   - to:
     - podSelector:
         matchLabels:
-          app: database
+          app: postgres
     ports:
     - protocol: TCP
       port: 5432
@@ -110,7 +110,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: database
+      app: postgres
   policyTypes:
   - Ingress
   ingress:
