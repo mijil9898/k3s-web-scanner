@@ -9,7 +9,7 @@ set -euo pipefail
 #   ./scripts/ci-cd.sh --workflow path.yml  # trigger a different workflow file/name
 #   ./scripts/ci-cd.sh --repo owner/repo    # specify repo explicitly
 
-WORKFLOW=".github/workflows/devsecops-audit.yml"
+WORKFLOW=".github/workflows/security.yml"
 REF="main"
 REPO=""
 
