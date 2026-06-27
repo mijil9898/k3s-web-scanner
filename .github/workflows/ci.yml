@@ -107,13 +107,20 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y --no-install-recommends libmagic1 yara
+          sudo apt-get install -y --no-install-recommends \
+            libmagic1 \
+            libmagic-dev \
+            libyara-dev \
+            yara
 
       - name: Install Python dependencies
         run: |
+          pip install --upgrade pip
+          pip install --only-binary=:all: lightgbm numpy || \
+            pip install lightgbm numpy
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          pip install black flake8
+          pip install black flake8 pytest-cov
 
       - name: Formatting Check (Black)
         continue-on-error: true
