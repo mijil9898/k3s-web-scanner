@@ -118,6 +118,9 @@ spec:
     - podSelector:
         matchLabels:
           app: backend
+    - podSelector:
+        matchLabels:
+          app: malware-analyzer
     ports:
     - protocol: TCP
       port: 5432
@@ -149,7 +152,15 @@ spec:
       port: 53
     - protocol: TCP
       port: 53
-  # Allow Internet for VT API (No internal access except DNS)
+  # Allow outbound to postgres
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow Internet for VT API (No internal access except DNS and postgres)
   - to:
     - ipBlock:
         cidr: 0.0.0.0/0

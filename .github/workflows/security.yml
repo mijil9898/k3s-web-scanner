@@ -35,13 +35,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   security-scan:
     name: Security Scan (Non-blocking)
@@ -80,7 +80,7 @@ jobs:
           hashFiles('artifacts/bandit.sarif') != '' &&
           (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: artifacts/bandit.sarif
           category: bandit
@@ -116,7 +116,7 @@ jobs:
           hashFiles('artifacts/gitleaks.sarif') != '' &&
           (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: artifacts/gitleaks.sarif
           category: gitleaks
@@ -147,7 +147,7 @@ jobs:
           hashFiles('artifacts/trivy-fs.sarif') != '' &&
           (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: artifacts/trivy-fs.sarif
           category: trivy-fs
