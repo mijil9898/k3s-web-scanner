@@ -6,8 +6,8 @@ echo "🚀 Cài đặt Prometheus & Grafana stack vào namespace 'monitoring'...
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update
 
-# Install kube-prometheus-stack
-# We set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false so it scrapes ALL ServiceMonitors regardless of labels.
+# Cài đặt kube-prometheus-stack
+# Thiết lập prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false để scrape TẤT CẢ ServiceMonitors bất kể nhãn.
 helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
   --create-namespace \

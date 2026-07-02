@@ -2,8 +2,8 @@
 set -euo pipefail
 
 # git-commit-and-push.sh
-# Stages all changes, commits with provided message, and pushes to the remote branch.
-# Optionally triggers CI by calling trigger-ci.sh (if second arg is 'ci').
+# Chuẩn bị tất cả thay đổi, commit với thông điệp được cung cấp, và push lên nhánh remote.
+# Có thể kích hoạt CI bằng cách gọi trigger-ci.sh (nếu đối số thứ hai là 'ci').
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"

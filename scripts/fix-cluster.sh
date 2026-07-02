@@ -31,14 +31,14 @@ kubectl -n "$NAMESPACE" get pods -o wide || true
 echo "\n=== Pods in problematic state ==="
 kubectl -n "$NAMESPACE" get pods | awk '/Terminating|Error|CrashLoopBackOff|Pending|Unknown/ {print $1, $2, $3, $4}' || true
 
-# Collect logs for cloudflared and frontend
+# Thu thập log cho cloudflared và frontend
 echo "\n=== Cloudflared logs (last 200 lines) ==="
 kubectl -n "$NAMESPACE" logs -l app=cloudflared --tail=200 || true
 
 echo "\n=== Frontend logs (last 200 lines) ==="
 kubectl -n "$NAMESPACE" logs -l app=frontend --tail=200 || true
 
-# Check secrets
+# Kiểm tra secret
 echo "\n=== Secrets check ==="
 if kubectl -n "$NAMESPACE" get secret malware-secrets >/dev/null 2>&1; then
   echo "- Secret 'malware-secrets' exists"
@@ -74,13 +74,13 @@ fi
 if [ "$MODE" = "apply" ]; then
   echo "\n[fix-cluster] APPLY mode: attempting safe remediation steps..."
 
-  # Reapply cloudflared manifests if exist
+  # Áp dụng lại các manifest của cloudflared nếu tồn tại
   if [ -d "$REPO_ROOT/k8s-manifests/cloudflared" ]; then
     echo "- Applying cloudflared manifests"
     kubectl -n "$NAMESPACE" apply -f "$REPO_ROOT/k8s-manifests/cloudflared/" || true
   fi
 
-  # Restart common deployments to recover from Unknown/Error
+  # Khởi động lại các deployment chung để phục hồi từ trạng thái Unknown/Error
   for d in cloudflared cloudflared-named frontend backend malware-analyzer; do
     if kubectl -n "$NAMESPACE" get deployment "$d" >/dev/null 2>&1; then
       echo "- Restarting deployment/$d"
@@ -88,7 +88,7 @@ if [ "$MODE" = "apply" ]; then
     fi
   done
 
-  # Delete long-running Terminating pods cautiously
+  # Xóa các pod ở trạng thái Terminating quá lâu một cách cẩn thận
   TERM_PODS=$(kubectl -n "$NAMESPACE" get pods --no-headers | awk '/Terminating/ {print $1}') || true
   if [ -n "$TERM_PODS" ]; then
     for p in $TERM_PODS; do

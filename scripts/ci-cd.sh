@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Script: scripts/ci-cd.sh
-# Purpose: Trigger the `devsecops-audit.yml` workflow via GitHub CLI
-# Usage:
+# Kịch bản: scripts/ci-cd.sh
+# Mục đích: Kích hoạt workflow `devsecops-audit.yml` thông qua GitHub CLI
+# Cách dùng:
 #   ./scripts/ci-cd.sh                      # triggers default workflow on main
 #   ./scripts/ci-cd.sh --ref develop        # trigger on different ref
 #   ./scripts/ci-cd.sh --workflow path.yml  # trigger a different workflow file/name

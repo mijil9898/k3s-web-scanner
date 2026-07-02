@@ -25,13 +25,13 @@
     </a>
 
     <div class="header-right">
-      <!-- Server status -->
+      <!-- Trạng thái Server -->
       <div class="header-status" id="healthStatus" aria-live="polite">
         <span class="status-dot"></span>
         <span id="statusLabel" data-vi="Đang kiểm tra..." data-en="Checking..." data-zh="检查中...">Đang kiểm tra...</span>
       </div>
 
-      <!-- Language toggle -->
+      <!-- Chuyển đổi ngôn ngữ -->
       <select class="ctrl-btn lang-select" id="langSelect" aria-label="Chọn ngôn ngữ"
         title="Switch language">
         <option value="vi">🇻🇳 VI</option>
@@ -39,7 +39,7 @@
         <option value="zh">🇨🇳 ZH</option>
       </select>
 
-      <!-- Dark mode toggle -->
+      <!-- Chuyển đổi giao diện sáng/tối -->
       <button class="ctrl-btn theme-btn" id="themeBtn" aria-label="Chuyển giao diện"
         title="Toggle theme">
         <span class="icon-light">🌙</span>
@@ -55,7 +55,7 @@
     <p id="heroDesc">Tải file lên để nhận báo cáo phân tích đầy đủ — cấu trúc PE, YARA, entropy, IoC, MITRE ATT&amp;CK
       và điểm rủi ro.</p>
 
-    <!-- Pipeline -->
+    <!-- Tiến trình phân tích (Pipeline) -->
     <div class="pipeline" aria-label="Các bước phân tích" id="heroPipeline">
       <div class="pipe-step"><span class="pipe-dot"></span>Hash</div>
       <span class="pipe-arrow">→</span>
@@ -79,7 +79,7 @@
   <main class="main">
     <div class="container">
 
-      <!-- Upload Zone -->
+      <!-- Khu vực tải file -->
       <section id="uploadSection">
         <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Tải file lên">
           <div class="upload-icon" aria-hidden="true">🛡️</div>
@@ -109,7 +109,7 @@
         </div>
       </section>
 
-      <!-- Progress -->
+      <!-- Màn hình chờ -->
       <section class="progress-section" id="progressSection" aria-live="polite">
         <div class="progress-card">
           <div class="progress-header">
@@ -206,13 +206,13 @@
         </div>
       </section>
 
-      <!-- Error -->
+      <!-- Báo lỗi -->
       <div class="error-card" id="errorCard" role="alert">
         <h3 id="errorTitle">⚠ Phân tích thất bại</h3>
         <p id="errorMessage">Đã xảy ra lỗi không xác định.</p>
       </div>
 
-      <!-- Results -->
+      <!-- Kết quả phân tích -->
       <section class="results-section" id="resultsSection" aria-label="Kết quả phân tích"></section>
 
     </div>

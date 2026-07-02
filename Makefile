@@ -1,6 +1,6 @@
 .PHONY: dev test deploy-k3s full clean logs status help build
 
-# Biến - thay YOUR_GITHUB_USER
+# Biến - thay thế bằng YOUR_GITHUB_USER của bạn
 GITHUB_USER ?= YOUR_GITHUB_USER
 IMAGE_TAG   ?= latest
 NAMESPACE   := mijil
@@ -53,7 +53,7 @@ clean:
 
 # Hướng dẫn
 help:
-	@echo "Available commands:"
+	@echo "Các lệnh có sẵn:"
 	@echo "  make dev          - Chạy local full stack (frontend + backend + malware-analyzer + db)"
 	@echo "  make test         - Review code + test local (không deploy)"
 	@echo "  make deploy-k3s   - Build frontend + deploy lên k3s/k3d"

@@ -146,13 +146,13 @@ spec:
     - protocol: TCP
       port: 5000
   egress:
-  # Allow DNS
+  # Cho phép DNS
   - ports:
     - protocol: UDP
       port: 53
     - protocol: TCP
       port: 53
-  # Allow outbound to postgres
+  # Cho phép truy cập ra ngoài đến postgres
   - to:
     - podSelector:
         matchLabels:
@@ -160,7 +160,7 @@ spec:
     ports:
     - protocol: TCP
       port: 5432
-  # Allow Internet for VT API (No internal access except DNS and postgres)
+  # Cho phép truy cập Internet cho API VirusTotal (Không có quyền truy cập nội bộ ngoại trừ DNS và postgres)
   - to:
     - ipBlock:
         cidr: 0.0.0.0/0

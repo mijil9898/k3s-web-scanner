@@ -5,7 +5,7 @@ metadata:
   namespace: mijil
 data:
   config.yml: |
-    # Replace <TUNNEL-UUID> with the tunnel id from the credentials JSON.
+    # Thay thế <TUNNEL-UUID> bằng id của tunnel từ tệp JSON thông tin xác thực.
     tunnel: <TUNNEL-UUID>
     credentials-file: /etc/cloudflared/credentials.json
     ingress:

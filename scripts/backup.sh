@@ -13,7 +13,7 @@ BACKUP_FILE="$BACKUP_DIR/postgres_backup_$TIMESTAMP.sql.gz"
 mkdir -p "$BACKUP_DIR"
 echo '=== Backup PostgreSQL ==='
 
-# Prefer statefulset pod name detection if possible
+# Ưu tiên lấy tên pod từ statefulset nếu có thể
 POD=$(kubectl -n $NAMESPACE get pods -l app=postgres -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
 if [ -z "$POD" ]; then
   POD="postgres-0"

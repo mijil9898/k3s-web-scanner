@@ -33,7 +33,7 @@ env:
 
 jobs:
   # ──────────────────────────────────────────────────────────────
-  # Guard: Check CI Status & Prepare Tags
+  # Kiểm tra trạng thái CI & Chuẩn bị Tags
   # ──────────────────────────────────────────────────────────────
   guard:
     name: Check CI Status
@@ -66,7 +66,7 @@ jobs:
           fi
 
   # ──────────────────────────────────────────────────────────────
-  # Build, Scan & Push
+  # Build, Quét & Đẩy Image
   # ──────────────────────────────────────────────────────────────
   build-and-push:
     name: Build & Push — ${{ matrix.service.name }}
@@ -128,7 +128,7 @@ jobs:
           cache-to: type=gha,scope=${{ matrix.service.name }},mode=max
 
       # ──────────────────────────────────────────────────────────────
-      # Trivy Image Scan (Warn only)
+      # Quét Image bằng Trivy (Chỉ cảnh báo)
       # ──────────────────────────────────────────────────────────────
       - name: Run Trivy Image Scan
         uses: aquasecurity/trivy-action@master
@@ -154,7 +154,7 @@ jobs:
           echo "- **Image**: \`${{ env.REGISTRY }}/${{ env.OWNER }}/${{ matrix.service.image }}:${SHORT_SHA}\`" >> $GITHUB_STEP_SUMMARY
 
   # ──────────────────────────────────────────────────────────────
-  # Release Creation (Only on Tag)
+  # Tạo Bản phát hành (Chỉ khi có Tag)
   # ──────────────────────────────────────────────────────────────
   create-release:
     name: Auto Release Notes
@@ -170,7 +170,7 @@ jobs:
           generate_release_notes: true
 
   # ──────────────────────────────────────────────────────────────
-  # Deploy to K3s with Automated Rollback
+  # Triển khai lên K3s với Tự động Rollback
   # ──────────────────────────────────────────────────────────────
   deploy:
     name: Deploy to K3s & Rollback
@@ -233,7 +233,7 @@ jobs:
           echo "- **Namespace**: \`${{ env.K8S_NAMESPACE }}\`" >> $GITHUB_STEP_SUMMARY
 
   # ──────────────────────────────────────────────────────────────
-  # Notify
+  # Thông báo
   # ──────────────────────────────────────────────────────────────
   notify:
     name: Notify

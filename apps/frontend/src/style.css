@@ -155,7 +155,7 @@
       gap: 8px
     }
 
-    /* Status */
+    /* Trạng thái */
     .header-status {
       display: flex;
       align-items: center;
@@ -194,7 +194,7 @@
       }
     }
 
-    /* Toggle buttons shared style */
+    /* Kiểu chung cho các nút Toggle */
     .ctrl-btn {
       display: flex;
       align-items: center;
@@ -220,7 +220,7 @@
       background: var(--accent-g)
     }
 
-    /* Dark mode toggle */
+    /* Toggle Giao diện Sáng/Tối */
     .theme-btn .icon-light {
       display: inline
     }
@@ -237,14 +237,14 @@
       display: inline
     }
 
-    /* Lang select */
+    /* Chọn ngôn ngữ */
     .lang-select {
       cursor: pointer;
       outline: none;
       padding-right: 4px;
     }
 
-    /* Mobile menu toggle */
+    /* Nút bật tắt Menu Mobile */
     .mobile-menu-btn {
       display: none;
       height: 34px;
@@ -312,7 +312,7 @@
       line-height: 1.7;
     }
 
-    /* Pipeline display */
+    /* Hiển thị Tiến trình (Pipeline) */
     .pipeline {
       display: flex;
       align-items: center;
@@ -466,7 +466,7 @@
       display: none
     }
 
-    /* File Preview */
+    /* Xem trước File */
     .file-preview {
       display: none;
       margin-top: 14px;
@@ -712,7 +712,7 @@
       display: block
     }
 
-    /* Risk Banner */
+    /* Banner cảnh báo Rủi ro */
     .risk-banner {
       display: flex;
       align-items: center;
@@ -785,7 +785,7 @@
       letter-spacing: .5px;
     }
 
-    /* Cards */
+    /* Thẻ hiển thị (Cards) */
     .result-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -861,7 +861,7 @@
       display: block
     }
 
-    /* Table */
+    /* Bảng (Table) */
     .info-table {
       width: 100%;
       border-collapse: collapse;
@@ -897,7 +897,7 @@
       color: var(--text)
     }
 
-    /* Tags */
+    /* Nhãn (Tags) */
     .tag-list {
       display: flex;
       flex-wrap: wrap;
@@ -961,7 +961,7 @@
       background: rgba(34, 211, 238, .07)
     }
 
-    /* Copy button */
+    /* Nút Sao chép */
     .copy-btn {
       background: none;
       border: 1px solid var(--border);
@@ -985,7 +985,7 @@
       color: var(--green)
     }
 
-    /* Section sub-heading */
+    /* Tiêu đề phụ của các phần */
     .card-section-title {
       font-size: 11px;
       font-weight: 700;
@@ -995,7 +995,7 @@
       margin: 14px 0 6px;
     }
 
-    /* Download bar */
+    /* Thanh Tải xuống */
     .download-bar {
       display: flex;
       gap: 8px;
@@ -1041,7 +1041,7 @@
       box-shadow: 0 6px 20px rgba(37, 99, 235, .4)
     }
 
-    /* New Analysis button */
+    /* Nút Phân tích Mới */
     .new-analysis {
       display: flex;
       justify-content: center;
@@ -1067,7 +1067,7 @@
       transform: translateY(-1px)
     }
 
-    /* JSON pre */
+    /* Khối hiển thị JSON */
     pre.json-pre {
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -1162,7 +1162,7 @@
         display: none
       }
 
-      /* hide on tablet, show pipeline in progress only */
+      /* Ẩn trên tablet, chỉ hiện pipeline khi đang chạy */
       .hero {
         padding: 40px 16px 32px
       }

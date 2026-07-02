@@ -46,8 +46,8 @@ malwareAnalyzer:
     pullPolicy: IfNotPresent
   service:
     port: 5000
-  # If true, the malware-analyzer will allow uploads from any client (no Bearer token required).
-  # Set to false to require ANALYZE_AUTH_TOKEN via the secret.
+  # Nếu true, malware-analyzer sẽ cho phép mọi client tải file lên (không yêu cầu Bearer token).
+  # Đặt thành false để yêu cầu ANALYZE_AUTH_TOKEN thông qua secret.
   allowPublicUploads: true
   resources:
     requests:
@@ -67,7 +67,7 @@ cloudflared:
   image:
     repository: cloudflare/cloudflared
     tag: latest
-  # Quick Tunnel mode using --url to point to in-cluster service
+  # Chế độ Quick Tunnel sử dụng --url để trỏ tới service trong cluster
   quickTunnel: true
 
 monitoring:
@@ -79,12 +79,12 @@ neo4j:
   image:
     repository: neo4j
     tag: "5.18-community"
-  # Credentials — stored in neo4j-secret (key: password)
+  # Thông tin xác thực - lưu trong neo4j-secret (key: password)
   secretName: neo4j-secret
-  # Storage
+  # Lưu trữ
   storage: 5Gi
   storageClass: local-path
-  # JVM memory limits (keep small for single-node k3s)
+  # Giới hạn bộ nhớ JVM (giữ ở mức nhỏ cho k3s chạy trên một node)
   memory:
     heap: 256m
     pagecache: 256m

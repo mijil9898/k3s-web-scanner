@@ -9,12 +9,12 @@ echo "[URL.sh] Namespace: $NAMESPACE"
 
 # 1) Quick Tunnel (trycloudflare) từ logs
 echo "Searching for Quick Tunnel URL in cloudflared logs..."
-# Prefer logs from the most-recently started cloudflared pod to avoid stale URLs
+# Ưu tiên lấy log từ pod cloudflared khởi động gần nhất để tránh các URL cũ
 POD=$(kubectl -n "$NAMESPACE" get pods -l app=cloudflared -o jsonpath='{range .items[*]}{.metadata.name}|{.status.startTime}\n{end}' 2>/dev/null | sort -t'|' -k2 | tail -n1 | cut -d'|' -f1 || true)
 if [ -n "$POD" ]; then
   QT_URL=$(kubectl -n "$NAMESPACE" logs "$POD" --tail=1000 2>/dev/null | grep -Eo 'https?://[a-z0-9-]+\.trycloudflare\.com' | tail -n1 || true)
 else
-  # Fallback: check any cloudflared logs by label
+  # Dự phòng: kiểm tra bất kỳ log cloudflared nào theo nhãn
   QT_URL=$(kubectl -n "$NAMESPACE" logs -l app=cloudflared --tail=1000 2>/dev/null | grep -Eo 'https?://[a-z0-9-]+\.trycloudflare\.com' | tail -n1 || true)
 fi
 

@@ -1,6 +1,6 @@
 name: _Notify (Reusable)
 
-# Reusable workflow — called by cd.yml via `uses: ./.github/workflows/_notify.yml`
+# Workflow có thể tái sử dụng — được gọi bởi cd.yml thông qua `uses: ./.github/workflows/_notify.yml`
 on:
   workflow_call:
     inputs:

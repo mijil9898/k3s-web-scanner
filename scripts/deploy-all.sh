@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Wrapper deploy-all moved into scripts/
+# Script deploy-all đã được chuyển vào thư mục scripts/
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MALWARE_DIR="$REPO_ROOT/apps/malware-analyzer"
@@ -13,7 +13,7 @@ BACKEND_IMAGE="mijil-backend:latest"
 K3D_CLUSTER=${K3D_CLUSTER:-mijil-dev}
 NAMESPACE=mijil
 
-# Verify required CLI tools
+# Xác minh các công cụ CLI cần thiết
 for cmd in docker kubectl helm; do
   if ! command -v $cmd >/dev/null 2>&1; then
     echo "Required command '$cmd' not found in PATH. Install/enable it before running." >&2

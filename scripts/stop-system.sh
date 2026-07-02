@@ -6,7 +6,7 @@ echo "🛑 Đang tắt hệ thống K3s Mijil..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Default cluster
+# Cluster mặc định
 K3D_CLUSTER=${K3D_CLUSTER:-mijil-dev}
 
 # Tắt các tiến trình port-forward đang chạy ngầm (nếu có) để giải phóng port

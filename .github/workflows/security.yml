@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Daily at 02:00 UTC
+    # Hàng ngày vào lúc 02:00 UTC
     - cron: "0 2 * * *"
   workflow_dispatch: {}
 
@@ -57,7 +57,7 @@ jobs:
         run: mkdir -p artifacts
 
       # ──────────────────────────────────────────
-      # 1. SAST: Bandit (Python)
+      # 1. Quét mã nguồn SAST: Bandit (Python)
       # ──────────────────────────────────────────
       - name: Setup Python for Bandit
         uses: actions/setup-python@v5
@@ -86,7 +86,7 @@ jobs:
           category: bandit
 
       # ──────────────────────────────────────────
-      # 2. Secret Scanning: Gitleaks
+      # 2. Quét mật khẩu/chìa khóa bị lộ: Gitleaks
       # ──────────────────────────────────────────
       - name: Install Gitleaks v8.18.4
         run: |
@@ -122,7 +122,7 @@ jobs:
           category: gitleaks
 
       # ──────────────────────────────────────────
-      # 3. SCA: Trivy Filesystem
+      # 3. Phân tích lỗ hổng SCA: Trivy Filesystem
       # ──────────────────────────────────────────
       - name: Run Trivy FS — JSON
         uses: aquasecurity/trivy-action@master
@@ -153,7 +153,7 @@ jobs:
           category: trivy-fs
 
       # ──────────────────────────────────────────
-      # 4. Upload raw JSON artifacts
+      # 4. Tải lên các artifact JSON gốc
       # ──────────────────────────────────────────
       - name: Install jq
         if: always()
@@ -184,7 +184,7 @@ jobs:
           retention-days: 30
 
       # ──────────────────────────────────────────
-      # 5. Aggregate findings → Job Summary
+      # 5. Tổng hợp các phát hiện → Tóm tắt Công việc (Job Summary)
       # ──────────────────────────────────────────
       - name: Aggregate findings and write Job Summary
         if: always()

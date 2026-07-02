@@ -8,20 +8,20 @@ import * as promClient from "prom-client";
 const app = express();
 const port = process.env.PORT || 8080;
 
-// Security: Helmet sets various HTTP headers
+// Bảo mật: Helmet thiết lập các HTTP header bảo vệ
 app.use(helmet());
 
-// Security: Rate Limiting
+// Bảo mật: Giới hạn tốc độ truy cập (Rate Limiting)
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 1 * 60 * 1000, // 1 phút
+  max: 100, // giới hạn mỗi IP tối đa 100 request mỗi cửa sổ thời gian
   message: { error: "Too many requests, please try again later." },
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use("/api/", limiter);
 
-// Prometheus metrics
+// Prometheus: Thu thập metrics giám sát hệ thống
 const register = new promClient.Registry();
 promClient.collectDefaultMetrics({ register });
 
@@ -33,7 +33,7 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
 });
 
-// Security: Strict CORS
+// Bảo mật: Cấu hình CORS chặt chẽ
 const allowedOrigins = [
   "https://mijil.yourdomain.com",
   process.env.FRONTEND_URL,
@@ -49,7 +49,7 @@ app.use(cors({
   }
 }));
 
-app.use(express.json({ limit: '1mb' })); // Security: Limit JSON body payload
+app.use(express.json({ limit: '1mb' })); // Bảo mật: Giới hạn kích thước JSON body
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
 

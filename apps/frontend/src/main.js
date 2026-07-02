@@ -1,7 +1,7 @@
 (() => {
       'use strict';
 
-      /* ═══ i18n ════════════════════════════════════════════ */
+      /* ═══ Đa ngôn ngữ (i18n) ═════════════════════════════════════ */
       const T = {
         vi: {
           heroBadge: '🔍 Phân tích mã độc tĩnh',
@@ -17,7 +17,7 @@
           statusOffline: 'Ngoại tuyến',
           statusCheck: 'Đang kiểm tra...',
           footer: '🛡 Malware Analyzer · Phân tích thực hiện phía máy chủ · File bị xóa ngay sau khi phân tích',
-          /* result sections */
+          /* phần kết quả */
           riskTitle: 'Đánh giá Rủi ro',
           fileInfo: 'Thông tin File',
           entropyTitle: 'Phân tích Entropy',
@@ -174,13 +174,13 @@
         }
       };
 
-      /* ═══ State ═══════════════════════════════════════════ */
+      /* ═══ Trạng thái ứng dụng ══════════════════════════════════ */
       let lang = localStorage.getItem('ma-lang') || 'vi';
       let theme = localStorage.getItem('ma-theme') || 'light';
       let selectedFile = null;
       let lastData = null;
 
-      /* ═══ DOM refs ════════════════════════════════════════ */
+      /* ═══ Tham chiếu DOM ═════════════════════════════════ */
       const $ = id => document.getElementById(id);
       const uploadZone = $('uploadZone');
       const fileInput = $('fileInput');
@@ -193,7 +193,7 @@
       const fileSizeEl = $('fileSize');
       const analyzeBtn = $('analyzeBtn');
 
-      /* ═══ Helpers ═════════════════════════════════════════ */
+      /* ═══ Hàm tiện ích ══════════════════════════════════ */
       function t(key) { return T[lang][key] ?? T.vi[key] ?? key; }
       function fmtBytes(b) {
         if (!b) return '0 B';
@@ -207,7 +207,7 @@
         return d.innerHTML;
       }
 
-      /* ═══ Theme ═══════════════════════════════════════════ */
+      /* ═══ Giao diện sáng/tối ════════════════════════════════ */
       function applyTheme(th) {
         theme = th;
         document.documentElement.setAttribute('data-theme', theme);
@@ -215,7 +215,7 @@
       }
       window.toggleTheme = () => applyTheme(theme === 'light' ? 'dark' : 'light');
 
-      /* ═══ Language ════════════════════════════════════════ */
+      /* ═══ Ngôn ngữ ═════════════════════════════════════ */
       function applyLang(l) {
         lang = l;
         document.documentElement.setAttribute('data-lang', lang);
@@ -237,11 +237,11 @@
         $('errorTitle').textContent = t('errorTitle');
         $('footerText').textContent = t('footer');
 
-        /* re-bind browse click after innerHTML swap */
+        /* gán lại sự kiện click sau khi innerHTML thay đổi */
         const bl = $('browseLink');
         if (bl) bl.addEventListener('click', () => fileInput.click());
 
-        /* status label */
+        /* nhãn trạng thái */
         const statusEl = $('statusLabel');
         if (statusEl) {
           const cur = statusEl.dataset.state;
@@ -250,7 +250,7 @@
           else statusEl.textContent = t('statusCheck');
         }
 
-        /* pipeline labels */
+        /* nhãn pipeline */
         document.querySelectorAll('.pipe-item-label[data-vi]').forEach(el => {
           el.textContent = el.dataset[lang];
         });
@@ -259,12 +259,12 @@
           el.textContent = el.dataset[`${lang}-${state}`] || el.textContent;
         });
 
-        /* if results already rendered, re-render */
+        /* nếu kết quả đã render rồi thì render lại */
         if (lastData) renderResults(lastData);
       }
       window.applyLang = applyLang;
 
-      /* ═══ Drag & Drop ═════════════════════════════════════ */
+      /* ═══ Kéo thả file ══════════════════════════════════ */
       ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
         uploadZone.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); });
       });
@@ -287,7 +287,7 @@
       const bl0 = $('browseLink');
       if (bl0) bl0.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
 
-      /* ═══ Handle file ══════════════════════════════════════ */
+      /* ═══ Xử lý file ═════════════════════════════════ */
       function handleFile(file) {
         selectedFile = file;
         fileNameEl.textContent = file.name;
@@ -295,7 +295,7 @@
         filePreview.classList.add('is-visible');
       }
 
-      /* ═══ Analyze ══════════════════════════════════════════ */
+      /* ═══ Phân tích ═══════════════════════════════════ */
       const analyzeBtnEl = $('analyzeBtn');
       if (analyzeBtnEl) {
         analyzeBtnEl.addEventListener('click', () => {
@@ -360,7 +360,7 @@
           
           const analysisId = data.analysis_id;
           
-          // Connect to SSE stream
+          // Kết nối luồng SSE theo dõi tiến trình
           const eventSource = new EventSource(`/stream/${analysisId}`);
           
           eventSource.onmessage = function(e) {
@@ -368,9 +368,7 @@
               const msg = JSON.parse(e.data);
               
               if (msg.status === 'running' || msg.status === 'progress') {
-                // You can update a text label here if you have one, e.g. msg.message
-                // We map step_id to our UI steps if possible, or just animate
-                // For simplicity, we just keep the animation running
+                // Cập nhật trạng thái bước phân tích hoặc giữ animation chạy
                 if (msg.step_id) {
                     markStep(msg.step_id, 'run');
                 }
@@ -393,7 +391,7 @@
           eventSource.onerror = function(e) {
             console.error("SSE connection error", e);
             eventSource.close();
-            // Fallback to poll if SSE fails
+            // Dự phòng: chuyển sang poll nếu SSE bị lỗi
             setTimeout(() => fetchFinalResults(analysisId), 2000);
           };
 
@@ -416,7 +414,7 @@
                 showError(data.error || "Phân tích thất bại");
                 hideProgress();
             } else {
-                // still running, poll again
+                // vẫn đang chạy, poll lại
                 setTimeout(() => fetchFinalResults(analysisId), 2000);
             }
         } catch(err) {
@@ -427,7 +425,7 @@
         }
       }
 
-      /* ═══ Progress ═════════════════════════════════════════ */
+      /* ═══ Tiến trình ══════════════════════════════════ */
       function showProgress() { progressEl.classList.add('is-visible'); resetSteps(); }
       function hideProgress() { progressEl.classList.remove('is-visible'); }
       function resetSteps() {
@@ -453,7 +451,7 @@
         }
       }
 
-      /* ═══ Error ════════════════════════════════════════════ */
+      /* ═══ Lỗi ══════════════════════════════════════ */
       function showError(msg) {
         errorMsg.textContent = msg;
         errorCard.classList.add('is-visible');
@@ -461,7 +459,7 @@
       }
       function hideError() { errorCard.classList.remove('is-visible'); }
 
-      /* ═══ Risk helpers ═════════════════════════════════════ */
+      /* ═══ Hàm hỗ trợ mức rủi ro ════════════════════════════ */
       function riskColor(lvl) {
         const m = { CLEAN: '#059669', LOW: '#059669', MEDIUM: '#d97706', HIGH: '#ea580c', CRITICAL: '#dc2626', MALICIOUS: '#991b1b' };
         return m[lvl?.toUpperCase()] || '#6b7280';
@@ -471,7 +469,7 @@
         return m[lvl?.toUpperCase()] || '107,114,128';
       }
 
-      /* ═══ Copy ══════════════════════════════════════════════ */
+      /* ═══ Sao chép ═══════════════════════════════════ */
       function mkCopyBtn(val) {
         const safe = esc(val).replace(/'/g, "\\'");
         return `<button class="copy-btn" data-copy="${safe}">${t('copyBtn')}</button>`;
@@ -483,7 +481,7 @@
         });
       };
 
-      /* ═══ Card helper ═══════════════════════════════════════ */
+      /* ═══ Hàm tạo thẻ kết quả ════════════════════════════ */
       function card(icon, title, body, open = false) {
         return `
     <div class="result-card ${open ? 'is-open' : ''} fade-up">
@@ -498,7 +496,7 @@
     </div>`;
       }
 
-      /* ═══ Render Results ════════════════════════════════════ */
+      /* ═══ Hiển thị kết quả ═══════════════════════════════ */
       function renderResults(data) {
         resultsEl.innerHTML = '';
         const risk = data.risk_assessment || data.risk || {};
@@ -507,7 +505,7 @@
         const rc = riskColor(level);
         const rr = riskRgb(level);
 
-        /* Risk Banner */
+        /* Banner rủi ro */
         resultsEl.innerHTML += `
     <div class="risk-banner fade-up" style="--risk-color:${rc};--risk-pct:${score};--risk-rgb:${rr}">
       <div class="risk-gauge" style="--risk-color:${rc};--risk-pct:${score}">
@@ -520,7 +518,7 @@
       </div>
     </div>`;
 
-        /* Executive Summary */
+        /* Tổng quan phân tích */
         if (data.executive_summary) {
           const sum = data.executive_summary;
           resultsEl.innerHTML += card('📝', 'Tổng quan Phân tích', `
@@ -532,7 +530,7 @@
       </table>`, true);
         }
 
-        /* File Info */
+        /* Thông tin File */
         const h = data.hashes || {};
         resultsEl.innerHTML += card('📄', t('fileInfo'), `
     <table class="info-table">
@@ -560,7 +558,7 @@
       </table>`);
         }
 
-        /* PE */
+        /* Phân tích PE */
         const pe = data.pe_analysis || data.pe || {};
         if (pe.machine || pe.compile_time || pe.sections) {
           let rows = '';
@@ -607,7 +605,7 @@
           resultsEl.innerHTML += card('⚙️', t('peTitle'), `<table class="info-table">${rows}</table>${alertHtml}${secHtml}${impHtml}`);
         }
 
-        /* Deep Static */
+        /* Phân tích tĩnh chuyên sâu */
         const deep = data.deep_static || {};
         if (deep.available) {
           let deepHtml = '';
@@ -638,7 +636,7 @@
           }
         }
 
-        /* Strings / IoCs */
+        /* Chuỗi / IoC */
         const iocs = (data.strings || {}).iocs || {};
         const hasIoc = Object.values(iocs).some(v => Array.isArray(v) && v.length);
         if (hasIoc) {
@@ -669,7 +667,7 @@
         }
 
 
-        /* MITRE */
+        /* MITRE ATT&CK */
         const techniques = (data.mitre || {}).techniques || [];
         if (techniques.length) {
           let mitreHtml = '<div class="tag-list">';
@@ -682,7 +680,7 @@
           resultsEl.innerHTML += card('🗺️', `${t('mitreTitle')} (${techniques.length})`, mitreHtml);
         }
 
-        /* Risk Factors */
+        /* Yếu tố rủi ro */
         const factors = risk.breakdown || risk.factors || [];
         if (factors.length) {
           let factHtml = '<div style="display:flex;flex-direction:column;gap:6px">';
@@ -698,7 +696,7 @@
           resultsEl.innerHTML += card('⚠️', `${t('riskFactors')} (${factors.length})`, factHtml);
         }
 
-        /* Analysis warnings */
+        /* Cảnh báo phân tích */
         const errors = data.analysis_errors || [];
         if (errors.length) {
           let errHtml = '<div style="display:flex;flex-direction:column;gap:5px">';
@@ -707,7 +705,7 @@
           resultsEl.innerHTML += card('⚠️', `${t('analysisWarn')} (${errors.length})`, errHtml);
         }
 
-        /* Raw JSON */
+        /* JSON thô */
         const fmtJson = syntaxHighlight(data);
         resultsEl.innerHTML += card('💻', t('rawJson'), `
     <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
@@ -715,7 +713,7 @@
     </div>
     <pre class="json-pre"><code id="rawJsonCode">${fmtJson}</code></pre>`);
 
-        /* Downloads */
+        /* Tải xuống */
         const urls = data.report_urls || {};
         if (urls.html) {
           let dl = '<div class="download-bar">';
@@ -730,7 +728,7 @@
       </div>`;
         }
 
-        /* New Analysis */
+        /* Phân tích mới */
         resultsEl.innerHTML += `
     <div class="new-analysis">
       <button class="new-btn" data-action="reset">${t('newAnalysis')}</button>
@@ -738,13 +736,13 @@
 
         resultsEl.classList.add('is-visible');
 
-        /* Stagger animation - render nhanh */
+        /* Hiệu ứng xuất hiện lần lượt - render nhanh */
         resultsEl.querySelectorAll('.result-card,.risk-banner').forEach((el, i) => {
           el.style.animationDelay = `${i * 0.065}s`;
         });
       }
 
-      /* ═══ JSON syntax highlight ════════════════════════════ */
+      /* ═══ Tô màu cú pháp JSON ═════════════════════════════ */
       function syntaxHighlight(json) {
         if (typeof json !== 'string') json = JSON.stringify(json, null, 2);
         json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -765,7 +763,7 @@
         });
       };
 
-      /* ═══ Reset ═════════════════════════════════════════════ */
+      /* ═══ Đặt lại giao diện ════════════════════════════════ */
       window.resetUI = () => {
         resultsEl.classList.remove('is-visible');
         resultsEl.innerHTML = '';
@@ -777,7 +775,7 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       };
 
-      /* ═══ Health check ══════════════════════════════════════ */
+      /* ═══ Kiểm tra sức khỏe server ═════════════════════════ */
       fetch('/health').then(r => r.json()).then(d => {
         const dot = document.querySelector('.status-dot');
         const label = $('statusLabel');
@@ -801,7 +799,7 @@
         label.textContent = t('statusOffline');
       });
 
-      /* ═══ Init ══════════════════════════════════════════════ */
+      /* ═══ Khởi tạo ═══════════════════════════════════ */
       applyTheme(theme);
       applyLang(lang);
 
