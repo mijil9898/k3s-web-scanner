@@ -42,11 +42,11 @@ spec:
           periodSeconds: 10
         resources:
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: {{ .Values.backend.resources.requests.cpu | quote }}
+            memory: {{ .Values.backend.resources.requests.memory | quote }}
           limits:
-            cpu: 500m
-            memory: 512Mi
+            cpu: {{ .Values.backend.resources.limits.cpu | quote }}
+            memory: {{ .Values.backend.resources.limits.memory | quote }}
         env:
         - name: DB_HOST
           value: "postgres-service"

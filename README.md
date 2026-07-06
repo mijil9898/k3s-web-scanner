@@ -1,5 +1,8 @@
 # Web-Scan — Static Malware Analysis Platform
 
+[![CI](https://github.com/mijil9898/k3s-portfolio-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/mijil9898/k3s-portfolio-platform/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A self-hosted static malware analysis platform built with a microservices architecture, deployed on Kubernetes via Helm, and exposed securely through Cloudflare Tunnel — no port forwarding required.
 
 ---
@@ -60,13 +63,14 @@ Cloudflare Tunnel (cloudflared)
 ### Local Development (Docker Compose)
 
 ```bash
-# Start full stack: frontend + backend + malware-analyzer + postgres
+# Start full stack: frontend + backend + malware-analyzer + neo4j + postgres
 make dev
 
 # Access points:
 #   Frontend:          http://localhost:3000
 #   Backend API:       http://localhost:8080
 #   Malware Analyzer:  http://localhost:5000
+#   Neo4j Browser:     http://localhost:7474
 #   PostgreSQL:        localhost:5433
 ```
 

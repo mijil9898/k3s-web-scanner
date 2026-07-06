@@ -1,0 +1,43 @@
+{{- if .Values.frontend.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+  namespace: mijil
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: {{ .Values.frontend.hpa.minReplicas }}
+  maxReplicas: {{ .Values.frontend.hpa.maxReplicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.frontend.hpa.cpuUtilization }}
+{{- end }}
+---
+{{- if and .Values.malwareAnalyzer.enabled .Values.malwareAnalyzer.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: malware-analyzer-hpa
+  namespace: mijil
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: malware-analyzer
+  minReplicas: {{ .Values.malwareAnalyzer.hpa.minReplicas }}
+  maxReplicas: {{ .Values.malwareAnalyzer.hpa.maxReplicas }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .Values.malwareAnalyzer.hpa.cpuUtilization }}
+{{- end }}

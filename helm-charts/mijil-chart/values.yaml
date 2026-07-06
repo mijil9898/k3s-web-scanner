@@ -10,6 +10,13 @@ frontend:
   service:
     type: ClusterIP
     port: 80
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
   hpa:
     enabled: true
     minReplicas: 2
@@ -25,11 +32,25 @@ backend:
   env:
     NODE_ENV: production
     PORT: '8080'
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
 
 database:
   enabled: true
   storage: 10Gi
   storageClass: local-path
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
 
 ingress:
   enabled: true
@@ -56,6 +77,11 @@ malwareAnalyzer:
     limits:
       cpu: "1000m"
       memory: "1536Mi"
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    cpuUtilization: 70
   pvc:
     enabled: true
     storage: 2Gi
@@ -69,6 +95,13 @@ cloudflared:
     tag: latest
   # Chế độ Quick Tunnel sử dụng --url để trỏ tới service trong cluster
   quickTunnel: true
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
 
 monitoring:
   enabled: false

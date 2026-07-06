@@ -12,7 +12,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/src/style.css">
+  <link rel="stylesheet" href="./src/style.css">
 </head>
 
 <body>
@@ -57,21 +57,21 @@
 
     <!-- Tiến trình phân tích (Pipeline) -->
     <div class="pipeline" aria-label="Các bước phân tích" id="heroPipeline">
-      <div class="pipe-step"><span class="pipe-dot"></span>Hash</div>
+      <div class="pipe-step"><span class="pipe-dot"></span><span id="pipeHash">Hash</span></div>
       <span class="pipe-arrow">→</span>
-      <div class="pipe-step"><span class="pipe-dot"></span>Entropy</div>
+      <div class="pipe-step"><span class="pipe-dot"></span><span id="pipeEntropy">Entropy</span></div>
       <span class="pipe-arrow">→</span>
-      <div class="pipe-step"><span class="pipe-dot"></span>PE Analysis</div>
+      <div class="pipe-step"><span class="pipe-dot"></span><span id="pipePE">PE Analysis</span></div>
       <span class="pipe-arrow">→</span>
-      <div class="pipe-step"><span class="pipe-dot"></span>Deep Static</div>
+      <div class="pipe-step"><span class="pipe-dot"></span><span id="pipeDeep">Deep Static</span></div>
       <span class="pipe-arrow">→</span>
-      <div class="pipe-step"><span class="pipe-dot"></span>Strings &amp; IoC</div>
+      <div class="pipe-step"><span class="pipe-dot"></span><span id="pipeStrings">Strings &amp; IoC</span></div>
       <span class="pipe-arrow">→</span>
-      <div class="pipe-step"><span class="pipe-dot"></span>YARA</div>
+      <div class="pipe-step"><span class="pipe-dot"></span><span id="pipeYara">YARA</span></div>
       <span class="pipe-arrow">→</span>
-      <div class="pipe-step"><span class="pipe-dot"></span>MITRE ATT&amp;CK</div>
+      <div class="pipe-step"><span class="pipe-dot"></span><span id="pipeMitre">MITRE ATT&amp;CK</span></div>
       <span class="pipe-arrow">→</span>
-      <div class="pipe-step"><span class="pipe-dot"></span>Risk Score</div>
+      <div class="pipe-step"><span class="pipe-dot"></span><span id="pipeRisk">Risk Score</span></div>
     </div>
   </section>
 
@@ -224,7 +224,7 @@
       tích</span>
   </footer>
 
-  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="./src/main.js"></script>
 </body>
 
 </html>

@@ -33,9 +33,18 @@ full:
 	bash scripts/test-and-deploy.sh
 
 # Xem logs
+SVC ?= all
 logs:
-	kubectl logs -n $(NAMESPACE) -l app=frontend --tail=50 -f &
-	kubectl logs -n $(NAMESPACE) -l app=backend  --tail=50 -f
+ifeq ($(SVC),all)
+	kubectl logs -n $(NAMESPACE) -l app=frontend --tail=50 -f & \
+	kubectl logs -n $(NAMESPACE) -l app=backend --tail=50 -f & \
+	kubectl logs -n $(NAMESPACE) -l app=malware-analyzer --tail=50 -f & \
+	kubectl logs -n $(NAMESPACE) -l app=db --tail=50 -f & \
+	kubectl logs -n $(NAMESPACE) -l app=neo4j --tail=50 -f & \
+	kubectl logs -n $(NAMESPACE) -l app=cloudflared --tail=50 -f
+else
+	kubectl logs -n $(NAMESPACE) -l app=$(SVC) --tail=50 -f
+endif
 
 # Trạng thái cluster
 status:

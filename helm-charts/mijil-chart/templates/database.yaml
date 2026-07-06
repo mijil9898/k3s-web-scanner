@@ -78,6 +78,13 @@ spec:
         image: postgres:15-alpine
         ports:
         - containerPort: 5432
+        resources:
+          requests:
+            cpu: {{ .Values.database.resources.requests.cpu | quote }}
+            memory: {{ .Values.database.resources.requests.memory | quote }}
+          limits:
+            cpu: {{ .Values.database.resources.limits.cpu | quote }}
+            memory: {{ .Values.database.resources.limits.memory | quote }}
         env:
         - name: POSTGRES_USER
           value: "mijil"

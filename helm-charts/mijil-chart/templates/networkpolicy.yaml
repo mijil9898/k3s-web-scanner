@@ -160,7 +160,15 @@ spec:
     ports:
     - protocol: TCP
       port: 5432
-  # Cho phép truy cập Internet cho API VirusTotal (Không có quyền truy cập nội bộ ngoại trừ DNS và postgres)
+  # Cho phép truy cập ra ngoài đến neo4j
+  - to:
+    - podSelector:
+        matchLabels:
+          app: neo4j
+    ports:
+    - protocol: TCP
+      port: 7687
+  # Cho phép truy cập Internet cho API VirusTotal (Không có quyền truy cập nội bộ ngoại trừ DNS và postgres/neo4j)
   - to:
     - ipBlock:
         cidr: 0.0.0.0/0

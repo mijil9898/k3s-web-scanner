@@ -59,6 +59,11 @@
           more: 'nữa',
           iocLabels: { urls: 'URLs', ipv4: 'Địa chỉ IPv4', emails: 'Email', domains: 'Tên miền', registry_keys: 'Registry Keys', file_paths: 'Đường dẫn File' },
           pageTitle: 'Malware Analyzer — Nền tảng phân tích mã độc tĩnh',
+          pipeHash: 'Hash', pipeEntropy: 'Entropy', pipePE: 'PE Analysis', pipeDeep: 'Deep Static', pipeStrings: 'Strings &amp; IoC', pipeYara: 'YARA', pipeMitre: 'MITRE ATT&amp;CK', pipeRisk: 'Risk Score',
+          switchLang: 'Chuyển ngôn ngữ', toggleTheme: 'Chuyển giao diện', unknownErr: 'Đã xảy ra lỗi không xác định.', serverErr: 'Lỗi phân tích từ server', failErr: 'Phân tích thất bại', fetchErr: 'Không thể lấy kết quả phân tích',
+          summaryTitle: 'Tổng quan Phân tích', sumWhat: '📌 <strong>Đây là gì?</strong>', sumPurpose: '<strong>Mục đích</strong>', sumHarm: '<strong>Tác hại</strong>', sumAdvice: '<strong>Lời khuyên</strong>',
+          authSigned: 'Đã ký ✅', heuristicsAnomalies: '⚠️ Bất thường (Heuristics):', overlayFound: '📦 Phát hiện Dữ liệu Overlay (Khả nghi)', overlaySize: 'Kích thước:', overlayEntropy: 'Entropy:', overlayMD5: 'MD5:',
+          packer: 'Packer', obfuscation: 'Mã hóa/Làm rối (Obfuscation)', cryptoConst: 'Hằng số Mã hóa (Crypto)', antiApi: 'Anti-Analysis APIs', disassembly: 'Disassembly (Phản biên dịch)', insts: 'lệnh', funcs: 'hàm'
         },
         en: {
           heroBadge: '🔍 Static Malware Analysis',
@@ -115,6 +120,11 @@
           more: 'more',
           iocLabels: { urls: 'URLs', ipv4: 'IPv4 Addresses', emails: 'Emails', domains: 'Domains', registry_keys: 'Registry Keys', file_paths: 'File Paths' },
           pageTitle: 'Malware Analyzer — Static Analysis Platform',
+          pipeHash: 'Hash', pipeEntropy: 'Entropy', pipePE: 'PE Analysis', pipeDeep: 'Deep Static', pipeStrings: 'Strings &amp; IoC', pipeYara: 'YARA', pipeMitre: 'MITRE ATT&amp;CK', pipeRisk: 'Risk Score',
+          switchLang: 'Switch language', toggleTheme: 'Toggle theme', unknownErr: 'An unknown error occurred.', serverErr: 'Server analysis error', failErr: 'Analysis failed', fetchErr: 'Could not fetch analysis results',
+          summaryTitle: 'Executive Summary', sumWhat: '📌 <strong>What is this?</strong>', sumPurpose: '<strong>Purpose</strong>', sumHarm: '<strong>Harm</strong>', sumAdvice: '<strong>Advice</strong>',
+          authSigned: 'Signed ✅', heuristicsAnomalies: '⚠️ Heuristics Anomalies:', overlayFound: '📦 Overlay Data Found! (Suspicious Tail)', overlaySize: 'Size:', overlayEntropy: 'Entropy:', overlayMD5: 'MD5:',
+          packer: 'Packer', obfuscation: 'Obfuscation', cryptoConst: 'Crypto Constants', antiApi: 'Anti-Analysis APIs', disassembly: 'Disassembly', insts: 'insts', funcs: 'funcs'
         },
         zh: {
           heroBadge: '🔍 静态恶意软件分析',
@@ -171,6 +181,11 @@
           more: '更多',
           iocLabels: { urls: 'URLs', ipv4: 'IPv4 地址', emails: '电子邮件', domains: '域名', registry_keys: '注册表键', file_paths: '文件路径' },
           pageTitle: '恶意软件分析器 — 静态分析平台',
+          pipeHash: '哈希 (Hash)', pipeEntropy: '熵 (Entropy)', pipePE: 'PE 分析', pipeDeep: '深度静态分析', pipeStrings: '字符串 &amp; IoC', pipeYara: 'YARA', pipeMitre: 'MITRE ATT&amp;CK', pipeRisk: '风险评分',
+          switchLang: '切换语言', toggleTheme: '切换主题', unknownErr: '发生未知错误。', serverErr: '服务器分析错误', failErr: '分析失败', fetchErr: '无法获取分析结果',
+          summaryTitle: '分析摘要', sumWhat: '📌 <strong>这是什么？</strong>', sumPurpose: '<strong>目的</strong>', sumHarm: '<strong>危害</strong>', sumAdvice: '<strong>建议</strong>',
+          authSigned: '已签名 ✅', heuristicsAnomalies: '⚠️ 启发式异常 (Heuristics):', overlayFound: '📦 发现附加数据 (可疑尾部)', overlaySize: '大小:', overlayEntropy: '熵:', overlayMD5: 'MD5:',
+          packer: '加壳程序 (Packer)', obfuscation: '混淆 (Obfuscation)', cryptoConst: '加密常数 (Crypto)', antiApi: '反分析 API (Anti-Analysis)', disassembly: '反汇编 (Disassembly)', insts: '指令', funcs: '函数'
         }
       };
 
@@ -235,7 +250,25 @@
         $('progressTitle').textContent = t('progressTitle');
         $('progressSub').textContent = t('progressSub');
         $('errorTitle').textContent = t('errorTitle');
-        $('footerText').textContent = t('footer');
+                $('footerText').textContent = t('footer');
+        
+        // Pipeline texts
+        $('pipeHash').innerHTML = t('pipeHash');
+        $('pipeEntropy').innerHTML = t('pipeEntropy');
+        $('pipePE').innerHTML = t('pipePE');
+        $('pipeDeep').innerHTML = t('pipeDeep');
+        $('pipeStrings').innerHTML = t('pipeStrings');
+        $('pipeYara').innerHTML = t('pipeYara');
+        $('pipeMitre').innerHTML = t('pipeMitre');
+        $('pipeRisk').innerHTML = t('pipeRisk');
+        
+        $('langSelect').title = t('switchLang');
+        $('themeBtn').title = t('toggleTheme');
+        
+        // Error message update if it is the unknown default
+        if ($('errorMessage').textContent === 'Đã xảy ra lỗi không xác định.' || $('errorMessage').textContent === 'An unknown error occurred.' || $('errorMessage').textContent === '发生未知错误。') {
+            $('errorMessage').textContent = t('unknownErr');
+        }
 
         /* gán lại sự kiện click sau khi innerHTML thay đổi */
         const bl = $('browseLink');
@@ -379,7 +412,7 @@
               }
               else if (msg.status === 'error') {
                 eventSource.close();
-                showError(msg.message || "Lỗi phân tích từ server");
+                showError(msg.message || t("serverErr"));
                 hideProgress();
                 if (analyzeBtn) analyzeBtn.disabled = false;
               }
@@ -411,14 +444,14 @@
                 lastData = data.result;
                 setTimeout(() => { hideProgress(); renderResults(data.result); }, 500);
             } else if (data.status === 'error') {
-                showError(data.error || "Phân tích thất bại");
+                showError(data.error || t("failErr"));
                 hideProgress();
             } else {
                 // vẫn đang chạy, poll lại
                 setTimeout(() => fetchFinalResults(analysisId), 2000);
             }
         } catch(err) {
-            showError("Không thể lấy kết quả phân tích");
+            showError(t("fetchErr"));
             hideProgress();
         } finally {
             if (analyzeBtn) analyzeBtn.disabled = false;
@@ -521,12 +554,12 @@
         /* Tổng quan phân tích */
         if (data.executive_summary) {
           const sum = data.executive_summary;
-          resultsEl.innerHTML += card('📝', 'Tổng quan Phân tích', `
+          resultsEl.innerHTML += card('📝', t('summaryTitle'), `
       <table class="info-table" style="margin-bottom:0;">
-        <tr><td class="label" style="width:130px;">📌 <strong>Đây là gì?</strong></td><td class="value" style="color:var(--text-bright);">${esc(sum.what_it_is)}</td></tr>
-        <tr><td class="label"> <strong>Mục đích</strong></td><td class="value" style="color:var(--text-bright);">${esc(sum.purpose)}</td></tr>
-        <tr><td class="label"> <strong>Tác hại</strong></td><td class="value" style="color:var(--danger);">${esc(sum.harm)}</td></tr>
-        <tr><td class="label"> <strong>Lời khuyên</strong></td><td class="value" style="color:var(--accent);">${esc(sum.advice)}</td></tr>
+        <tr><td class="label" style="width:130px;">${t('sumWhat')}</td><td class="value" style="color:var(--text-bright);">${esc(sum.what_it_is)}</td></tr>
+        <tr><td class="label"> ${t('sumPurpose')}</td><td class="value" style="color:var(--text-bright);">${esc(sum.purpose)}</td></tr>
+        <tr><td class="label"> ${t('sumHarm')}</td><td class="value" style="color:var(--danger);">${esc(sum.harm)}</td></tr>
+        <tr><td class="label"> ${t('sumAdvice')}</td><td class="value" style="color:var(--accent);">${esc(sum.advice)}</td></tr>
       </table>`, true);
         }
 
@@ -566,13 +599,13 @@
           if (pe.compile_time) rows += `<tr><td class="label">${t('compileTime')}</td><td class="value">${esc(pe.compile_time)}</td></tr>`;
           if (pe.entry_point) rows += `<tr><td class="label">${t('entryPoint')}</td><td class="value">${esc(pe.entry_point)}</td></tr>`;
           if (pe.imphash) rows += `<tr><td class="label">${t('impHash')}</td><td class="value">${esc(pe.imphash)}${mkCopyBtn(pe.imphash)}</td></tr>`;
-          if (pe.is_signed) rows += `<tr><td class="label">Authenticode</td><td class="value"><span class="tag tag--info" style="background:rgba(16,185,129,0.2);color:#10b981;border:1px solid #10b981">Signed ✅</span></td></tr>`;
+          if (pe.is_signed) rows += `<tr><td class="label">Authenticode</td><td class="value"><span class="tag tag--info" style="background:rgba(16,185,129,0.2);color:#10b981;border:1px solid #10b981">${t('authSigned')}</span></td></tr>`;
           if (pe.rich_header && pe.rich_header.hash) rows += `<tr><td class="label">Rich Hash</td><td class="value">${esc(pe.rich_header.hash)}</td></tr>`;
 
           let alertHtml = '';
           if (pe.anomalies && pe.anomalies.length > 0) {
             alertHtml += `<div style="background:rgba(239,68,68,0.1); border-left:4px solid #ef4444; padding:10px 15px; margin: 15px 0; border-radius:4px;">
-              <strong style="color:#ef4444; display:block; margin-bottom:6px;">⚠️ Heuristics Anomalies:</strong>
+              <strong style="color:#ef4444; display:block; margin-bottom:6px;">${t('heuristicsAnomalies')}</strong>
               <ul style="margin:0; padding-left:20px; color:#f87171; font-size:13px;">`;
             pe.anomalies.forEach(a => { alertHtml += `<li>${esc(a)}</li>`; });
             alertHtml += `</ul></div>`;
@@ -580,8 +613,8 @@
 
           if (pe.overlay) {
              alertHtml += `<div style="background:rgba(245,158,11,0.1); border-left:4px solid #f59e0b; padding:10px 15px; margin: 15px 0; border-radius:4px;">
-              <strong style="color:#f59e0b; display:block; margin-bottom:4px;">📦 Overlay Data Found! (Suspicious Tail)</strong>
-              <span style="color:#fbbf24; font-size:13px;">Size: ${fmtBytes(pe.overlay.size)} | Entropy: ${pe.overlay.entropy} | MD5: ${pe.overlay.md5}</span>
+              <strong style="color:#f59e0b; display:block; margin-bottom:4px;">${t('overlayFound')}</strong>
+              <span style="color:#fbbf24; font-size:13px;">${t('overlaySize')} ${fmtBytes(pe.overlay.size)} | ${t('overlayEntropy')} ${pe.overlay.entropy} | ${t('overlayMD5')} ${pe.overlay.md5}</span>
             </div>`;
           }
 
@@ -610,25 +643,25 @@
         if (deep.available) {
           let deepHtml = '';
           if (deep.packer_detected) {
-            deepHtml += `<tr><td class="label">Packer</td><td class="value"><span class="tag tag--danger">${esc(deep.packer_detected)}</span></td></tr>`;
+            deepHtml += `<tr><td class="label">${t('packer')}</td><td class="value"><span class="tag tag--danger">${esc(deep.packer_detected)}</span></td></tr>`;
           }
           const obf = deep.obfuscation || {};
           if (obf.verdict && obf.verdict !== 'CLEAN') {
             const cls = obf.verdict === 'LIKELY_OBFUSCATED' ? 'tag--danger' : 'tag--warn';
-            deepHtml += `<tr><td class="label">Obfuscation</td><td class="value"><span class="tag ${cls}">${esc(obf.verdict)}</span> (XOR: ${(obf.xor_density * 100).toFixed(1)}%, JMP: ${(obf.jmp_density * 100).toFixed(1)}%)</td></tr>`;
+            deepHtml += `<tr><td class="label">${t('obfuscation')}</td><td class="value"><span class="tag ${cls}">${esc(obf.verdict)}</span> (XOR: ${(obf.xor_density * 100).toFixed(1)}%, JMP: ${(obf.jmp_density * 100).toFixed(1)}%)</td></tr>`;
           }
           if (deep.crypto_constants?.length) {
             let tags = '';
             deep.crypto_constants.slice(0, 10).forEach(c => tags += `<span class="tag tag--warn">${esc(c.label)}</span>`);
-            deepHtml += `<tr><td class="label">Crypto Constants</td><td class="value"><div class="tag-list">${tags}</div></td></tr>`;
+            deepHtml += `<tr><td class="label">${t('cryptoConst')}</td><td class="value"><div class="tag-list">${tags}</div></td></tr>`;
           }
           if (deep.anti_analysis?.apis?.length) {
             let tags = '';
             deep.anti_analysis.apis.forEach(a => tags += `<span class="tag tag--danger">${esc(a)}</span>`);
-            deepHtml += `<tr><td class="label">Anti-Analysis APIs</td><td class="value"><div class="tag-list">${tags}</div></td></tr>`;
+            deepHtml += `<tr><td class="label">${t('antiApi')}</td><td class="value"><div class="tag-list">${tags}</div></td></tr>`;
           }
           if (deep.disasm_summary?.total_instructions > 0) {
-            deepHtml += `<tr><td class="label">Disassembly</td><td class="value">${deep.disasm_summary.total_instructions} insts, ${deep.cfg_summary?.estimated_functions} funcs</td></tr>`;
+            deepHtml += `<tr><td class="label">${t('disassembly')}</td><td class="value">${deep.disasm_summary.total_instructions} ${t('insts')}, ${deep.cfg_summary?.estimated_functions} ${t('funcs')}</td></tr>`;
           }
 
           if (deepHtml) {

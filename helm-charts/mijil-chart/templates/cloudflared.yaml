@@ -31,10 +31,10 @@ spec:
             allowPrivilegeEscalation: false
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: {{ .Values.cloudflared.resources.requests.cpu | quote }}
+              memory: {{ .Values.cloudflared.resources.requests.memory | quote }}
             limits:
-              cpu: "250m"
-              memory: "256Mi"
+              cpu: {{ .Values.cloudflared.resources.limits.cpu | quote }}
+              memory: {{ .Values.cloudflared.resources.limits.memory | quote }}
 
 {{- end }}

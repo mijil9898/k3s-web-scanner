@@ -120,7 +120,7 @@ jobs:
             pip install lightgbm numpy
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
-          pip install black flake8 pytest-cov
+          pip install black flake8 ruff pytest-cov
 
       - name: Formatting Check (Black)
         continue-on-error: true
@@ -129,6 +129,10 @@ jobs:
       - name: Lint (Flake8)
         continue-on-error: true
         run: flake8 .
+
+      - name: Lint (Ruff)
+        continue-on-error: true
+        run: ruff check .
 
       - name: Run pytest with coverage
         continue-on-error: true
@@ -182,3 +186,16 @@ jobs:
             --set frontend.image.tag=test \
             --set backend.image.tag=test \
             --set malwareAnalyzer.image.tag=test
+
+  # ──────────────────────────────────────────────
+  # 5. Integration Test
+  # ──────────────────────────────────────────────
+  integration-test:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Run make test
+        run: make test

@@ -37,11 +37,11 @@ spec:
           periodSeconds: 10
         resources:
           requests:
-            cpu: 50m
-            memory: 64Mi
+            cpu: {{ .Values.frontend.resources.requests.cpu | quote }}
+            memory: {{ .Values.frontend.resources.requests.memory | quote }}
           limits:
-            cpu: 200m
-            memory: 128Mi
+            cpu: {{ .Values.frontend.resources.limits.cpu | quote }}
+            memory: {{ .Values.frontend.resources.limits.memory | quote }}
 ---
 apiVersion: v1
 kind: Service
