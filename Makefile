@@ -11,7 +11,6 @@ dev:
 	@echo "================================"
 	@echo "  Ứng dụng đã khởi động:"
 	@echo "  Frontend:           http://localhost:3000"
-	@echo "  Backend API:        http://localhost:8080"
 	@echo "  Malware Analyzer:   http://localhost:5000"
 	@echo "  Database:           localhost:5433"
 	@echo "================================"
@@ -37,7 +36,6 @@ SVC ?= all
 logs:
 ifeq ($(SVC),all)
 	kubectl logs -n $(NAMESPACE) -l app=frontend --tail=50 -f & \
-	kubectl logs -n $(NAMESPACE) -l app=backend --tail=50 -f & \
 	kubectl logs -n $(NAMESPACE) -l app=malware-analyzer --tail=50 -f & \
 	kubectl logs -n $(NAMESPACE) -l app=db --tail=50 -f & \
 	kubectl logs -n $(NAMESPACE) -l app=neo4j --tail=50 -f & \

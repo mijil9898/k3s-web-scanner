@@ -5,8 +5,6 @@ services:
     ports:
       - '3000:80'
     depends_on:
-      backend:
-        condition: service_healthy
       malware-analyzer:
         condition: service_healthy
     networks:
@@ -17,31 +15,6 @@ services:
       timeout: 10s
       retries: 3
 
-  backend:
-    build: ./apps/backend
-    restart: unless-stopped
-    ports:
-      - '8080:8080'
-    environment:
-      DB_HOST: db
-      DB_PORT: "5432"
-      DB_NAME: ${DB_NAME:-mijil}
-      DB_USER: ${DB_USER:-mijil}
-      DB_PASSWORD: ${DB_PASSWORD:?err_DB_PASSWORD_not_set}
-      NODE_ENV: ${NODE_ENV:-production}
-      PORT: "8080"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      app-net:
-        aliases:
-          - backend-service
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   malware-analyzer:
     build: ./apps/malware-analyzer

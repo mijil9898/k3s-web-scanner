@@ -2,14 +2,14 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: backend-monitor
+  name: malware-monitor
   namespace: {{ .Release.Namespace }}
   labels:
     release: monitoring
 spec:
   selector:
     matchLabels:
-      app: backend
+      app: malware-analyzer
   endpoints:
     - port: http
       path: /metrics
